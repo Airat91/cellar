@@ -97,6 +97,7 @@ osThreadId uartTaskHandle;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 //static void MX_GPIO_Init(void);
+void dcts_init (void);
 static void MX_IWDG_Init(void);
 static void MX_RTC_Init(void);
 //static void MX_ADC1_Init(void);
@@ -192,15 +193,15 @@ int main(void){
     osThreadDef(display_task, display_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*4);
     displayTaskHandle = osThreadCreate(osThread(display_task), NULL);
 
-    osThreadDef(adc_task, adc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*2);
+    /*osThreadDef(adc_task, adc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*2);
     adcTaskHandle = osThreadCreate(osThread(adc_task), NULL);
-
+*/
     osThreadDef(buttons_task, buttons_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     buttonsTaskHandle = osThreadCreate(osThread(buttons_task), NULL);
 
-    osThreadDef(am2302_task, am2302_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
+    /*osThreadDef(am2302_task, am2302_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     am2302TaskHandle = osThreadCreate(osThread(am2302_task), NULL);
-
+*/
     osThreadDef(navigation_task, navigation_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     navigationtTaskHandle = osThreadCreate(osThread(navigation_task), NULL);
 
@@ -215,6 +216,55 @@ int main(void){
 
     }
 
+}
+
+void dcts_init (void) {
+
+    strcpy (dcts.dcts_id, DCTS_ID_COMBINED);
+    strcpy (dcts.dcts_ver, "0.0.1");
+    strcpy (dcts.dcts_name, "Pogreb");
+    strcpy (dcts.dcts_name_cyr, "Погреб");
+    dcts.dcts_address = 0x0B;
+    dcts.dcts_rtc.day = 1;
+    dcts.dcts_rtc.month = 1;
+    dcts.dcts_rtc.year = 2000;
+    dcts.dcts_rtc.weekday = 6;
+    dcts.dcts_rtc.hour = 12;
+    dcts.dcts_rtc.minute = 0;
+    dcts.dcts_rtc.second = 0;
+    dcts.dcts_pwr = 0.0f;
+    dcts.dcts_meas_num = MEAS_NUM;
+    dcts.dcts_rele_num = RELE_NUM;
+    dcts.dcts_act_num  = ACT_NUM;
+    dcts.dcts_alrm_num = ALRM_NUM;
+
+    //meas_channels
+
+    dcts_meas_channel_init(TMPR_IN_1, "Tmpr 1", "Темп.1", "°C", "°C");
+    dcts_meas_channel_init(TMPR_IN_2, "Tmpr 2", "Темп.2", "°C", "°C");
+    dcts_meas_channel_init(TMPR_IN_AVG, "Tmpr avg", "Темп.ср.", "°C", "°C");
+    dcts_meas_channel_init(HUM_IN_1, "Hum 1", "Вл.1", "%", "%");
+    dcts_meas_channel_init(HUM_IN_2, "Hum 2", "Вл.2", "%", "%");
+    dcts_meas_channel_init(HUM_IN_AVG, "Hum avg", "Вл.ср.", "%", "%");
+    dcts_meas_channel_init(TMPR_OUT, "Tmpr out", "Темп. наружн.", "°C", "°C");
+    dcts_meas_channel_init(HUM_OUT, "Hum out", "Вл. наружн.", "%", "%");
+    dcts_meas_channel_init(WTRL_LVL_HIGH_ADC, "Drain high ADC", "Дренаж верх АЦП", "adc", "adc");
+    dcts_meas_channel_init(WTRL_LVL_LOW_ADC, "Drain low ADC", "Дренаж низ АЦП", "adc", "adc");
+    dcts_meas_channel_init(VALVE_IN_ADC, "Valve IN ADC", "Клапан приточ АЦП", "adc", "adc");
+    dcts_meas_channel_init(VALVE_OUT_ADC, "Valve OUT ADC", "Клапан вытяж. АЦП", "adc", "adc");
+
+    //act_channels
+
+    dcts_act_channel_init(VALVE_IN, "Valve IN", "Клапан приточ", "%", "%");
+    dcts_act_channel_init(VALVE_OUT, "Valve OUT", "Клапан вытяж", "%", "%");
+
+    //rele_channels
+
+    dcts_rele_channel_init(FAN_IN, "Fan IN", "Вент приточ");
+    dcts_rele_channel_init(HEATER, "Heater", "Нагреватель");
+    dcts_rele_channel_init(FREEZER, "Freezer", "Охладитель");
+    dcts_rele_channel_init(FAN_CONVECTION, "Convection", "Конвекция");
+    dcts_rele_channel_init(WTR_PUMP, "Water pump", "Дренаж");
 }
 
 /**
@@ -374,7 +424,7 @@ void display_task(void const * argument){
         LCD_clr();
         switch (selectedMenuItem->Page){
         case MAIN_PAGE:
-            main_page_print();
+            //main_page_print();
             break;
         case MAIN_MENU:
         case COMMON_INFO:
@@ -383,10 +433,10 @@ void display_task(void const * argument){
         case TMPR_CALIB:
         case CONNECTION:
         case DISPLAY:
-            main_menu_print();
+            //main_menu_print();
             break;
         case INFO:
-            info_print();
+            //info_print();
             break;
         case MEAS_CH_0:
         case MEAS_CH_1:
@@ -401,7 +451,7 @@ void display_task(void const * argument){
         case MEAS_CH_10:
         case MEAS_CH_11:
         case MEAS_CH_12:
-            meas_channels_print();
+            //meas_channels_print();
             break;
         case LVL_0:
         case LVL_20:
@@ -409,7 +459,7 @@ void display_task(void const * argument){
         case LVL_60:
         case LVL_80:
         case LVL_100:
-            calib_print(LVL_0);
+            //calib_print(LVL_0);
             break;
         case ADC_0:
         case ADC_10:
@@ -422,7 +472,7 @@ void display_task(void const * argument){
         case ADC_80:
         case ADC_90:
         case ADC_100:
-            calib_print(ADC_0);
+            //calib_print(ADC_0);
             break;
         case MDB_ADDR:
         case MDB_BITRATE:
