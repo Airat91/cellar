@@ -1,0 +1,1 @@
+openocd -f interface/stlink-v2-1.cfg -f board/stm32_f1.cfg
