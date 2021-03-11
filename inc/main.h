@@ -113,6 +113,26 @@ typedef enum{
     DIGIT_EDIT,
 }navigation_t;
 
+typedef enum{
+    CH_VALVE_IN = 0,
+    CH_VALVE_OUT,
+    CH_AM2302_OUT,
+    CH_AM2302_IN_1,
+    CH_AM2302_IN_2,
+    CH_VALVE_IN_PWM,
+    CH_VALVE_OUT_PWM,
+    CH_RESERVED,
+}ch_list;
+
+typedef enum{
+    DO_FAN_IN = 0,
+    DO_HEATER,
+    DO_FREEZER,
+    DO_FAN_CONVECTION,
+    DO_WTR_PUMP,
+    DO_RESERVED,
+}do_list;
+
 typedef struct{
     uint16_t * p_val;
     uint16_t val_min;
@@ -133,6 +153,11 @@ typedef union{
     uint16_t word[SAVED_PARAMS_SIZE];
 }saved_to_flash_t;
 
+typedef struct{
+     GPIO_TypeDef * port;
+     uint16_t pin;
+}ch_t;
+
 void _Error_Handler(char *, int);
 extern uint32_t us_cnt_H;
 extern navigation_t navigation_style;
@@ -150,6 +175,8 @@ extern osThreadId am2302TaskHandle;
 extern osThreadId navigationtTaskHandle;
 extern osThreadId uartTaskHandle;
 extern saved_to_flash_t config;
+extern ch_t do_ch[];
+extern ch_t ch[];
 
 void display_task(void const * argument);
 void am2302_task(void const * argument);

@@ -19,9 +19,9 @@
   */
 
 static const am2302_pin_t am2302_pin[AM2302_CH_NUM] = {
-    {.port = AM2302_1_PORT, .pin = AM2302_1_PIN},
-    {.port = AM2302_2_PORT, .pin = AM2302_2_PIN},
-    {.port = AM2302_3_PORT, .pin = AM2302_3_PIN},
+    {.port = CH_2_PORT, .pin = CH_2_PIN},
+    {.port = CH_3_PORT, .pin = CH_3_PIN},
+    {.port = CH_4_PORT, .pin = CH_4_PIN},
 };
 
 /*========== FUNCTIONS ==========*/

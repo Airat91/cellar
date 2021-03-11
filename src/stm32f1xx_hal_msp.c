@@ -109,11 +109,11 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
 
-    GPIO_InitStruct.Pin = WTR_TMP_PIN;
+    /*GPIO_InitStruct.Pin = WTR_TMP_PIN;
     HAL_GPIO_Init(WTR_TMP_PORT, &GPIO_InitStruct);
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     GPIO_InitStruct.Pin = WTR_LEV_PIN;
-    HAL_GPIO_Init(WTR_LEV_PORT, &GPIO_InitStruct);
+    HAL_GPIO_Init(WTR_LEV_PORT, &GPIO_InitStruct);*/
   
     /**ADC1 GPIO Configuration    
     PA0-WKUP     ------> ADC1_IN0

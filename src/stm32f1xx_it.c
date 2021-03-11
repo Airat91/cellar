@@ -85,7 +85,7 @@ void HardFault_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-      HAL_GPIO_TogglePin(LED_PORT,LED_PIN);
+      //HAL_GPIO_TogglePin(LED_PORT,LED_PIN);
       tick++;
       time = us_tim_get_value();
       while((cur - time) < 250000){

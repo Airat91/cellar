@@ -92,6 +92,7 @@ osThreadId uartTaskHandle;
 void SystemClock_Config(void);
 //static void MX_GPIO_Init(void);
 void dcts_init (void);
+static void do_init(void);
 static void MX_IWDG_Init(void);
 static void MX_RTC_Init(void);
 //static void MX_ADC1_Init(void);
@@ -138,6 +139,26 @@ static const uart_bitrate_t bitrate_array[14] = {
 };
 static uint16_t bitrate_array_pointer = 0;
 
+ch_t ch[8] = {
+    {.pin = CH_0_PIN, .port = CH_0_PORT},
+    {.pin = CH_1_PIN, .port = CH_1_PORT},
+    {.pin = CH_2_PIN, .port = CH_2_PORT},
+    {.pin = CH_3_PIN, .port = CH_3_PORT},
+    {.pin = CH_4_PIN, .port = CH_4_PORT},
+    {.pin = CH_5_PIN, .port = CH_5_PORT},
+    {.pin = CH_6_PIN, .port = CH_6_PORT},
+    {.pin = CH_7_PIN, .port = CH_7_PORT},
+};
+
+ch_t do_ch[6] = {
+    {.pin = DO_0_PIN, .port = DO_0_PORT},
+    {.pin = DO_1_PIN, .port = DO_1_PORT},
+    {.pin = DO_2_PIN, .port = DO_2_PORT},
+    {.pin = DO_3_PIN, .port = DO_3_PORT},
+    {.pin = DO_4_PIN, .port = DO_4_PORT},
+    {.pin = DO_5_PIN, .port = DO_5_PORT},
+};
+
 
 /**
   * @brief  The application entry point.
@@ -148,10 +169,11 @@ int main(void){
 
     HAL_Init();
     SystemClock_Config();
+    do_init();
     tim2_init();
     dcts_init();
     restore_params();
-    led_lin_init();
+    //led_lin_init();
 #if RELEASE
     MX_IWDG_Init();
 #endif //RELEASE
@@ -178,9 +200,9 @@ int main(void){
     osThreadDef(navigation_task, navigation_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     navigationtTaskHandle = osThreadCreate(osThread(navigation_task), NULL);
 
-    osThreadDef(uart_task, uart_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*4);
+    /*osThreadDef(uart_task, uart_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*4);
     uartTaskHandle = osThreadCreate(osThread(uart_task), NULL);
-
+*/
 
     /* Start scheduler */
     osKernelStart();
@@ -221,7 +243,7 @@ typedef enum {
 
 void dcts_init (void) {
 
-    strcpy (dcts.dcts_id, DCTS_ID_COMBINED);
+    dcts.dcts_id = DCTS_ID_COMBINED;
     strcpy (dcts.dcts_ver, "0.0.1");
     strcpy (dcts.dcts_name, "Pogreb");
     strcpy (dcts.dcts_name_cyr, "Погреб");
@@ -425,7 +447,7 @@ void display_task(void const * argument){
         LCD_clr();
         switch (selectedMenuItem->Page){
         case MAIN_PAGE:
-            //main_page_print();
+            main_page_print();
             break;
         case MAIN_MENU:
         case COMMON_INFO:
@@ -434,10 +456,10 @@ void display_task(void const * argument){
         case TMPR_CALIB:
         case CONNECTION:
         case DISPLAY:
-            //main_menu_print();
+            main_menu_print();
             break;
         case INFO:
-            //info_print();
+            info_print();
             break;
         case MEAS_CH_0:
         case MEAS_CH_1:
@@ -452,7 +474,7 @@ void display_task(void const * argument){
         case MEAS_CH_10:
         case MEAS_CH_11:
         case MEAS_CH_12:
-            //meas_channels_print();
+            meas_channels_print();
             break;
         case LVL_0:
         case LVL_20:
@@ -460,7 +482,7 @@ void display_task(void const * argument){
         case LVL_60:
         case LVL_80:
         case LVL_100:
-            //calib_print(LVL_0);
+            calib_print(LVL_0);
             break;
         case ADC_0:
         case ADC_10:
@@ -473,7 +495,7 @@ void display_task(void const * argument){
         case ADC_80:
         case ADC_90:
         case ADC_100:
-            //calib_print(ADC_0);
+            calib_print(ADC_0);
             break;
         case MDB_ADDR:
         case MDB_BITRATE:
@@ -602,10 +624,10 @@ static void main_page_print(void){
     LCD_fill_area(1,1,49,62,LCD_COLOR_WHITE);
 
     // print values
-    sprintf(string, "%3.1f%s", dcts_meas[WTR_TMPR].value, dcts_meas[WTR_TMPR].unit_cyr);
+    //sprintf(string, "%3.1f%s", dcts_meas[WTR_TMPR].value, dcts_meas[WTR_TMPR].unit_cyr);
     LCD_set_xy(align_text_center(string, Font_7x10)-38,45);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "%3.1f%s", dcts_meas[WTR_LVL].value, dcts_meas[WTR_LVL].unit_cyr);
+    //sprintf(string, "%3.1f%s", dcts_meas[WTR_LVL].value, dcts_meas[WTR_LVL].unit_cyr);
     LCD_set_xy(align_text_center(string, Font_7x10)-38,5);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     sprintf(string, "Горячая");
@@ -617,21 +639,21 @@ static void main_page_print(void){
 
 
     // fill water level
-    high_lev = (uint8_t)(dcts_meas[WTR_LVL].value/vmax*62);
+    /*high_lev = (uint8_t)(dcts_meas[WTR_LVL].value/vmax*62);
     if(high_lev > 61){
         high_lev = 61;
-    }
+    }*/
     LCD_invert_area(1,1,49,high_lev+1);
 
     sprintf(string, "Предбанник");
     LCD_set_xy(align_text_center(string, Font_7x10)+27,52);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_invert_area(52,53,127,63);
-    if(dcts_meas[PREDBANNIK_HUM].valid){
+    /*if(dcts_meas[PREDBANNIK_HUM].valid){
         sprintf(string, "%.1f%s/%.0f%s", dcts_meas[PREDBANNIK_TMPR].value, dcts_meas[PREDBANNIK_TMPR].unit_cyr, dcts_meas[PREDBANNIK_HUM].value, dcts_meas[PREDBANNIK_HUM].unit_cyr);
     }else{
         sprintf(string, "Нет связи");
-    }
+    }*/
     LCD_set_xy(align_text_center(string, Font_7x10)+27,41);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
@@ -639,11 +661,11 @@ static void main_page_print(void){
     LCD_set_xy(align_text_center(string, Font_7x10)+27,31);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_invert_area(52,32,127,42);
-    if(dcts_meas[MOYKA_HUM].valid){
+    /*if(dcts_meas[MOYKA_HUM].valid){
         sprintf(string, "%.1f%s/%.0f%s", dcts_meas[MOYKA_TMPR].value, dcts_meas[MOYKA_TMPR].unit_cyr, dcts_meas[MOYKA_HUM].value, dcts_meas[MOYKA_HUM].unit_cyr);
     }else{
         sprintf(string, "Нет связи");
-    }
+    }*/
     LCD_set_xy(align_text_center(string, Font_7x10)+27,20);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
@@ -651,11 +673,11 @@ static void main_page_print(void){
     LCD_set_xy(align_text_center(string, Font_7x10)+27,10);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_invert_area(52,12,127,21);
-    if(dcts_meas[MOYKA_HUM].valid){
+    /*if(dcts_meas[MOYKA_HUM].valid){
         sprintf(string, "%.1f%s", dcts_meas[PARILKA_TMPR].value, dcts_meas[PARILKA_TMPR].unit_cyr);
     }else{
         sprintf(string, "Нет связи");
-    }
+    }*/
     LCD_set_xy(align_text_center(string, Font_7x10)+27,0);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 }
@@ -755,12 +777,12 @@ static void calib_print (uint8_t start_channel){
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_invert_area(0,53,127,63);
     if(temp->Page == LVL_CALIB){
-        sprintf(string, "%.0f",dcts_meas[WTR_LVL_ADC].value);
+        //sprintf(string, "%.0f",dcts_meas[WTR_LVL_ADC].value);
         LCD_set_xy(align_text_right(string,Font_7x10),52);
         LCD_print(string,&Font_7x10,LCD_COLOR_WHITE);
         calib_table = config.params.lvl_calib_table;
     }else if(temp->Page == TMPR_CALIB){
-        sprintf(string, "%.0f",dcts_meas[WTR_TMPR_ADC].value);
+        //sprintf(string, "%.0f",dcts_meas[WTR_TMPR_ADC].value);
         LCD_set_xy(align_text_right(string,Font_7x10),52);
         LCD_print(string,&Font_7x10,LCD_COLOR_WHITE);
         calib_table = config.params.tmpr_calib_table;
@@ -1113,7 +1135,7 @@ void am2302_task (void const * argument){
     am2302_init();
     am2302_data_t am2302 = {0};
     while(1){
-        am2302 = am2302_get(2);
+        /*am2302 = am2302_get(2);
         taskENTER_CRITICAL();
         if(am2302.error == 1){
             dcts_meas[PREDBANNIK_HUM].valid = FALSE;
@@ -1147,7 +1169,7 @@ void am2302_task (void const * argument){
             dcts_meas[PARILKA_TMPR].value = (float)am2302.tmpr/10;
             dcts_meas[PARILKA_TMPR].valid = TRUE;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL();*/
 
         osDelayUntil(&last_wake_time, am2302_task_period);
     }
@@ -1188,7 +1210,7 @@ void uart_task(void const * argument){
         }
         if(tick == 1000/uart_task_period){
             tick = 0;
-            HAL_GPIO_TogglePin(LED_PORT,LED_PIN);
+            //HAL_GPIO_TogglePin(LED_PORT,LED_PIN);
             for(uint8_t i = 0; i < MEAS_NUM; i++){
                 sprintf(string, "%s:\t%.1f(%s)\n",dcts_meas[i].name,(double)dcts_meas[i].value,dcts_meas[i].unit);
                 if(i == MEAS_NUM - 1){
@@ -1358,8 +1380,8 @@ static void restore_params(void){
         //init default values if saved params not found
         config.params.mdb_address = dcts.dcts_address;
         config.params.mdb_bitrate = BITRATE_56000;
-        memcpy(config.params.lvl_calib_table, def_lvl_calib_table, 6);
-        memcpy(config.params.tmpr_calib_table, def_tmpr_calib_table, 11);
+        //memcpy(config.params.lvl_calib_table, def_lvl_calib_table, 6);
+        //memcpy(config.params.tmpr_calib_table, def_tmpr_calib_table, 11);
     }
     for(bitrate_array_pointer = 0; bitrate_array_pointer < 14; bitrate_array_pointer++){
         if(bitrate_array[bitrate_array_pointer] == config.params.mdb_bitrate){
@@ -1454,7 +1476,7 @@ static u8 read_bkp(u8 bkp_num){
     }
     return (u8)(data & 0xFF);
 }
-static float read_float_bkp(u8 bkp_num, u8 sign){
+/*static float read_float_bkp(u8 bkp_num, u8 sign){
     u8 data = read_bkp(bkp_num);
     char buf[5] = {0};
     if(sign == READ_FLOAT_SIGNED){
@@ -1463,9 +1485,9 @@ static float read_float_bkp(u8 bkp_num, u8 sign){
         sprintf(buf, "%d", data);
     }
     return atoff(buf);
-}
+}*/
 
-static void led_lin_init(void){
+/*static void led_lin_init(void){
     __HAL_RCC_GPIOC_CLK_ENABLE();
     GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
@@ -1474,6 +1496,22 @@ static void led_lin_init(void){
     GPIO_InitStruct.Pin = LED_PIN;
     HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
     HAL_GPIO_Init (LED_PORT, &GPIO_InitStruct);
+}*/
+
+
+static void do_init(void){
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    for(u8 i = 0;i < 6; i++){
+        GPIO_InitStruct.Pin = do_ch[i].pin;
+        HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
+        HAL_GPIO_Init (do_ch[i].port, &GPIO_InitStruct);
+    }
 }
 
 #ifdef  USE_FULL_ASSERT

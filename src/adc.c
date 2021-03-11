@@ -121,10 +121,10 @@ void adc_gpio_init (void){
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pin = PWR_PIN;
     HAL_GPIO_Init(PWR_PORT, &GPIO_InitStruct);
-    GPIO_InitStruct.Pin = WTR_LEV_PIN;
+    /*GPIO_InitStruct.Pin = WTR_LEV_PIN;
     HAL_GPIO_Init(WTR_LEV_PORT, &GPIO_InitStruct);
     GPIO_InitStruct.Pin = WTR_TMP_PIN;
-    HAL_GPIO_Init(WTR_TMP_PORT, &GPIO_InitStruct);
+    HAL_GPIO_Init(WTR_TMP_PORT, &GPIO_InitStruct);*/
 }
 /**
  * @brief Deinit ADC gpio
@@ -132,8 +132,8 @@ void adc_gpio_init (void){
  */
 void adc_gpio_deinit (void){
     HAL_GPIO_DeInit(PWR_PORT,PWR_PIN);
-    HAL_GPIO_DeInit(WTR_LEV_PORT,WTR_LEV_PIN);
-    HAL_GPIO_DeInit(WTR_TMP_PORT,WTR_TMP_PIN);
+    //HAL_GPIO_DeInit(WTR_LEV_PORT,WTR_LEV_PIN);
+    //HAL_GPIO_DeInit(WTR_TMP_PORT,WTR_TMP_PIN);
 }
 /**
  * @brief Measure ADC channels and write values to DCTS
@@ -177,7 +177,7 @@ void adc_task(void const * argument){
         taskENTER_CRITICAL();
         dcts.dcts_pwr = temp/ADC_MAX*ADC_VREF*PWR_K;
 
-        dcts_meas[WTR_LVL_ADC].value = (float)wtr_lev_sum/ADC_BUF_SIZE;
+        /*dcts_meas[WTR_LVL_ADC].value = (float)wtr_lev_sum/ADC_BUF_SIZE;
         dcts_meas[WTR_LVL_V].value = dcts_meas[WTR_LVL_ADC].value*ADC_VREF/ADC_MAX;
         dcts_meas[WTR_LVL].value =adc_lvl_calc(dcts_meas[WTR_LVL_ADC].value);
 
@@ -186,7 +186,7 @@ void adc_task(void const * argument){
         dcts_meas[WTR_TMPR].value = adc_tmpr_calc(dcts_meas[WTR_TMPR_ADC].value);
 
         dcts_meas[VREF_ADC].value = (float)vref_sum/ADC_BUF_SIZE;
-        dcts_meas[VREF_V].value = dcts_meas[VREF_ADC].value*ADC_VREF/ADC_MAX;
+        dcts_meas[VREF_V].value = dcts_meas[VREF_ADC].value*ADC_VREF/ADC_MAX;*/
         taskEXIT_CRITICAL();
 
         tick++;
