@@ -73,12 +73,6 @@
 #define DEFAULT_TASK_PERIOD 100
 #define RELEASE 0
 
-typedef enum{
-    READ_FLOAT_SIGNED = 0,
-    READ_FLOAT_UNSIGNED,
-}read_float_bkp_sign_t;
-
-
 /* Private variables ---------------------------------------------------------*/
 RTC_HandleTypeDef hrtc;
 TIM_HandleTypeDef htim2;
@@ -126,27 +120,6 @@ uint32_t us_cnt_H = 0;
 navigation_t navigation_style = MENU_NAVIGATION;
 edit_val_t edit_val = {0};
 saved_to_flash_t config;
-static const uint16_t def_lvl_calib_table[6] = {
-    375,
-    738,
-    1102,
-    1466,
-    1829,
-    2193,
-};
-static const uint16_t def_tmpr_calib_table[11] = {
-    3137,
-    2727,
-    2275,
-    1826,
-    1421,
-    1082,
-    813,
-    607,
-    454,
-    341,
-    258,
-};
 static const uart_bitrate_t bitrate_array[14] = {
     BITRATE_600,
     BITRATE_1200,
@@ -217,6 +190,34 @@ int main(void){
     }
 
 }
+
+typedef enum {
+    TMPR_IN_1 = 0,
+    TMPR_IN_2,
+    TMPR_IN_AVG,
+    HUM_IN_1,
+    HUM_IN_2,
+    HUM_IN_AVG,
+    TMPR_OUT,
+    HUM_OUT,
+    WTRL_LVL_HIGH_ADC,
+    WTRL_LVL_LOW_ADC,
+    VALVE_IN_ADC,
+    VALVE_OUT_ADC,
+}dcts_meas_t;
+
+typedef enum {
+    VALVE_IN = 0,
+    VALVE_OUT,
+}dcts_act_t;
+
+typedef enum {
+    FAN_IN = 0,
+    HEATER,
+    FREEZER,
+    FAN_CONVECTION,
+    WTR_PUMP,
+}dcts_rele_t;
 
 void dcts_init (void) {
 
