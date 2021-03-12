@@ -82,6 +82,9 @@
 #define STEP_OUT2_2 LL_GPIO_PIN_12
 #define STEP_PORT GPIOB
 
+#define MEAS_NUM 18
+#define ACT_NUM 4
+#define RELE_NUM 5
 #define SAVED_PARAMS_SIZE 21
 
 #if(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)
@@ -133,13 +136,42 @@ typedef enum{
     DO_RESERVED,
 }do_list;
 
-typedef struct{
-    uint16_t * p_val;
-    uint16_t val_min;
-    uint16_t val_max;
-    uint8_t digit;
-    uint8_t digit_max;
-}edit_val_t;
+ typedef enum{
+     VAL_UNKNOWN = 0,
+     VAL_UINT8,
+     VAL_INT8,
+     VAL_UINT16,
+     VAL_INT16,
+     VAL_UINT32,
+     VAL_INT32,
+ }edit_val_type;
+
+ typedef union{
+     uint8_t * p_uint8;
+     int8_t * p_int8;
+     uint16_t * p_uint16;
+     int16_t * p_int16;
+     uint32_t * p_uint32;
+     int32_t * p_int32;
+ }edit_val_p_type_t;
+
+ typedef union{
+     uint8_t uint8;
+     int8_t int8;
+     uint16_t uint16;
+     int16_t int16;
+     uint32_t uint32;
+     int32_t int32;
+ }edit_val_type_t;
+
+ typedef struct{
+     edit_val_p_type_t p_val;
+     edit_val_type_t val_min;
+     edit_val_type_t val_max;
+     uint8_t digit;
+     uint8_t digit_max;
+     edit_val_type type;
+ }edit_val_t;
 
 typedef union{
     struct{
@@ -183,6 +215,7 @@ void am2302_task(void const * argument);
 void default_task(void const * argument);
 void navigation_task(void const * argument);
 void uart_task(void const * argument);
+uint32_t uint32_pow(uint16_t x, uint8_t pow);
 
 uint32_t us_tim_get_value(void);
 void us_tim_delay(uint32_t us);
