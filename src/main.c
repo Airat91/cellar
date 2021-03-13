@@ -98,9 +98,9 @@ static void MX_RTC_Init(void);
 //static void MX_ADC1_Init(void);
 //static void MX_USART1_UART_Init(void);
 static void tim2_init(void);
-static void main_page_print(void);
-static void menu_page_print(void);
-static void value_print(void);
+static void main_page_print(u8 tick);
+static void menu_page_print(u8 tick);
+static void value_print(u8 tick);
 static void error_page_print(menu_page_t page);
 static void save_page_print (void);
 /*static void info_print (void);
@@ -468,11 +468,11 @@ void display_task(void const * argument){
             last_page = selectedMenuItem->Page;
         }
         if(selectedMenuItem->Page == MAIN_PAGE){
-            main_page_print();
+            main_page_print(tick);
         }else if(selectedMenuItem->Child_num > 0){
-            menu_page_print();
+            menu_page_print(tick);
         }else if(selectedMenuItem->Child_num == 0){
-            value_print();
+            value_print(tick);
         }
 
         /*switch (selectedMenuItem->Page){
@@ -817,11 +817,10 @@ static void error_page_print(menu_page_t page){
     LCD_invert_area(0,0,42,11);
 }
 
-static void main_page_print(void){
+static void main_page_print(u8 tick){
     char string[100];
-    const float vmax = 114.0;
-    uint8_t high_lev = 0;
 
+    /*
     // print water tank
     LCD_fill_area(0,0,50,63,LCD_COLOR_BLACK);
     LCD_fill_area(1,1,49,62,LCD_COLOR_WHITE);
@@ -842,21 +841,21 @@ static void main_page_print(void){
 
 
     // fill water level
-    /*high_lev = (uint8_t)(dcts_meas[WTR_LVL].value/vmax*62);
+    high_lev = (uint8_t)(dcts_meas[WTR_LVL].value/vmax*62);
     if(high_lev > 61){
         high_lev = 61;
-    }*/
+    }
     LCD_invert_area(1,1,49,high_lev+1);
 
     sprintf(string, "Предбанник");
     LCD_set_xy(align_text_center(string, Font_7x10)+27,52);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_invert_area(52,53,127,63);
-    /*if(dcts_meas[PREDBANNIK_HUM].valid){
+    if(dcts_meas[PREDBANNIK_HUM].valid){
         sprintf(string, "%.1f%s/%.0f%s", dcts_meas[PREDBANNIK_TMPR].value, dcts_meas[PREDBANNIK_TMPR].unit_cyr, dcts_meas[PREDBANNIK_HUM].value, dcts_meas[PREDBANNIK_HUM].unit_cyr);
     }else{
         sprintf(string, "Нет связи");
-    }*/
+    }
     LCD_set_xy(align_text_center(string, Font_7x10)+27,41);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
@@ -864,11 +863,11 @@ static void main_page_print(void){
     LCD_set_xy(align_text_center(string, Font_7x10)+27,31);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_invert_area(52,32,127,42);
-    /*if(dcts_meas[MOYKA_HUM].valid){
+    if(dcts_meas[MOYKA_HUM].valid){
         sprintf(string, "%.1f%s/%.0f%s", dcts_meas[MOYKA_TMPR].value, dcts_meas[MOYKA_TMPR].unit_cyr, dcts_meas[MOYKA_HUM].value, dcts_meas[MOYKA_HUM].unit_cyr);
     }else{
         sprintf(string, "Нет связи");
-    }*/
+    }
     LCD_set_xy(align_text_center(string, Font_7x10)+27,20);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
@@ -876,20 +875,65 @@ static void main_page_print(void){
     LCD_set_xy(align_text_center(string, Font_7x10)+27,10);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_invert_area(52,12,127,21);
-    /*if(dcts_meas[MOYKA_HUM].valid){
+    if(dcts_meas[MOYKA_HUM].valid){
         sprintf(string, "%.1f%s", dcts_meas[PARILKA_TMPR].value, dcts_meas[PARILKA_TMPR].unit_cyr);
     }else{
         sprintf(string, "Нет связи");
-    }*/
-    LCD_set_xy(align_text_center(string, Font_7x10)+27,0);
+    }
+    LCD_set_xy(align_text_center(string, Font_7x10)+27,0);*/
+
+    sprintf(string, "Здесь будет");
+    LCD_set_xy(align_text_center(string, Font_7x10),40);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    sprintf(string, "главное окно");
+    LCD_set_xy(align_text_center(string, Font_7x10),30);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 }
 
-static void menu_page_print(void){
+static void menu_page_print(u8 tick){
+    char string[100];
+    //print header
+    menuItem* temp = selectedMenuItem->Parent;
+    sprintf(string, temp->Text);
+    LCD_set_xy(align_text_center(string, Font_7x10),52);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    LCD_invert_area(0,53,127,63);
 
+    //print previous
+    temp = selectedMenuItem->Previous;
+    sprintf(string, temp->Text);
+    LCD_set_xy(align_text_center(string, Font_7x10),39);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+
+    //print selected
+    sprintf(string, selectedMenuItem->Text);
+    LCD_set_xy(align_text_center(string, Font_7x10),26);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    LCD_invert_area(5,26,120,38);
+    LCD_invert_area(6,27,119,37);
+
+    //print next
+    temp = selectedMenuItem->Next;
+    sprintf(string, temp->Text);
+    LCD_set_xy(align_text_center(string, Font_7x10),14);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+
+    sprintf(string, "<назад      выбор>");
+    LCD_set_xy(0,0);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    LCD_invert_area(0,0,42,11);
+    LCD_invert_area(83,0,127,11);
 }
 
-static void value_print(void){
+static void value_print(u8 tick){
+    char string[100];
+
+    sprintf(string, "Здесь будут");
+    LCD_set_xy(align_text_center(string, Font_7x10),40);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    sprintf(string, "основные параметры");
+    LCD_set_xy(align_text_center(string, Font_7x10),30);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
 }
 

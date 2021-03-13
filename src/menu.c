@@ -34,7 +34,7 @@ menuItem* selectedMenuItem;
 
 //                  NAME           NEXT            PREV            PARENT          CHILD        GHILD_NUM   PAGE                    TEXT
 MAKE_MENU       (main_page,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     common_info,    4,          MAIN_PAGE,          "Главное меню");
-  MAKE_MENU     (common_info,   meas_channels,  date,           main_page,      info,           0,          COMMON_INFO,        "Об устройстве");
+  MAKE_MENU     (common_info,   meas_channels,  date,           main_page,      info,           1,          COMMON_INFO,        "Об устройстве");
     MAKE_MENU   (info,          NULL_ENTRY,     NULL_ENTRY,     common_info,    NULL_ENTRY,     0,          INFO,               "Об устройстве");
   MAKE_MENU     (meas_channels, act_channels,   common_info,    main_page,      meas_ch_0,      18,         MEAS_CHANNELS,      "Изм. каналы");
     MAKE_MENU   (meas_ch_0,     meas_ch_1,      meas_ch_17,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_0,          0x00);

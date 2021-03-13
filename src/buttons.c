@@ -55,7 +55,7 @@ void buttons_task (void const * argument){
                 }
             }else{
                 pressed_time[button].last_state = BUTTON_RELEASE;
-                pressed_time[button].pressed = 0;
+                //pressed_time[button].pressed = 0;
             }
         }
         osDelayUntil(&last_wake_time, BUTTONS_TASK_PERIOD);
