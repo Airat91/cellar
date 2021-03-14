@@ -104,8 +104,8 @@ static void menu_page_print(u8 tick);
 static void value_print(u8 tick);
 static void error_page_print(menu_page_t page);
 static void save_page_print (void);
-/*static void info_print (void);
-static void meas_channels_print(void);
+static void info_print (void);
+/*static void meas_channels_print(void);
 static void calib_print(uint8_t start_channel);
 static void mdb_print(void);
 static void display_print(void);*/
@@ -144,6 +144,14 @@ static const uart_bitrate_t bitrate_array[14] = {
     BITRATE_256000,
 };
 static uint16_t bitrate_array_pointer = 0;
+static const char off_on_descr[2][10] = {
+    "Выкл.",
+    "Вкл.",
+};
+static const char rele_cntrl_by_act_decr[2][10] = {
+    "Ручной",
+    "Авто",
+};
 
 ch_t ch[8] = {
     {.pin = CH_0_PIN, .port = CH_0_PORT},
@@ -238,6 +246,8 @@ typedef enum {
     VALVE_OUT_DEGREE,
     VALVE_OUT_ADC,
     VALVE_OUT_VLT,
+    VREF_ADC,
+    VBAT_VLT,
 }dcts_meas_t;
 
 typedef enum {
@@ -296,6 +306,8 @@ void dcts_init (void) {
     dcts_meas_channel_init(VALVE_OUT_DEGREE, "Valve OUT degree", "Клапан вытяжной угол", "°", "°");
     dcts_meas_channel_init(VALVE_OUT_ADC, "Valve OUT ADC", "Клапан вытяжной АЦП", "adc", "adc");
     dcts_meas_channel_init(VALVE_OUT_VLT, "Valve OUT V", "Клапан вытяжной В", "V", "В");
+    dcts_meas_channel_init(VREF_ADC, "Vref ADC", "Опорное напр. АЦП", "adc", "adc");
+    dcts_meas_channel_init(VBAT_VLT, "RTC battery V", "Батарейка В", "V", "В");
 
     //act_channels
 
@@ -475,12 +487,19 @@ void display_task(void const * argument){
             tick = 0;
             last_page = selectedMenuItem->Page;
         }
-        if(selectedMenuItem->Page == MAIN_PAGE){
+        switch (selectedMenuItem->Page) {
+        case MAIN_PAGE:
             main_page_print(tick);
-        }else if(selectedMenuItem->Child_num > 0){
-            menu_page_print(tick);
-        }else if(selectedMenuItem->Child_num == 0){
-            value_print(tick);
+            break;
+        case INFO:
+            info_print();
+            break;
+        default:
+            if(selectedMenuItem->Child_num > 0){
+                menu_page_print(tick);
+            }else if(selectedMenuItem->Child_num == 0){
+                value_print(tick);
+            }
         }
 
         LCD_update();
@@ -819,15 +838,18 @@ static void value_print(u8 tick){
     char string[50];
     print_header();
 
-    //print previous name
-    menuItem* temp = selectedMenuItem->Previous;
-    sprintf(string, temp->Text);
-    LCD_set_xy(2,39);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_fill_area(80,39,127,49,LCD_COLOR_WHITE);
-    get_param_value(string, temp->Page);
-    LCD_set_xy(align_text_right(string,Font_7x10),39);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    menuItem* temp = selectedMenuItem->Parent;
+    if(temp->Child_num >= 3){
+        //print previous name
+        temp = selectedMenuItem->Previous;
+        sprintf(string, temp->Text);
+        LCD_set_xy(2,39);
+        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+        LCD_fill_area(80,39,127,49,LCD_COLOR_WHITE);
+        get_param_value(string, temp->Page);
+        LCD_set_xy(align_text_right(string,Font_7x10),39);
+        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    }
 
     //print selected name
     sprintf(string, selectedMenuItem->Text);
@@ -876,7 +898,48 @@ static void get_param_value(char* string, menu_page_t page){
     case MEAS_CH_15:
     case MEAS_CH_16:
     case MEAS_CH_17:
+    case MEAS_CH_18:
+    case MEAS_CH_19:
         sprintf(string, "%.1f", (double)dcts_meas[(uint8_t)(page - MEAS_CH_0)].value);//, dcts_meas[(uint8_t)(page - MEAS_CH_0)].unit_cyr);
+        break;
+
+    case ACT_EN_0:
+    case ACT_EN_1:
+    case ACT_EN_2:
+    case ACT_EN_3:
+        sprintf(string, "%s", off_on_descr[dcts_act[(uint8_t)(page - ACT_EN_0)/4].state.control]);
+        break;
+
+    case ACT_SET_0:
+    case ACT_SET_1:
+    case ACT_SET_2:
+    case ACT_SET_3:
+        sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_EN_0)/4].set_value, dcts_act[(uint8_t)(page - ACT_EN_0)/4].unit_cyr);
+        break;
+
+    case ACT_CUR_0:
+    case ACT_CUR_1:
+    case ACT_CUR_2:
+    case ACT_CUR_3:
+        sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_CUR_0)/4].meas_value, dcts_act[(uint8_t)(page - ACT_CUR_0)/4].unit_cyr);
+        break;
+
+    case RELE_AUTO_MAN_0:
+    case RELE_AUTO_MAN_1:
+    case RELE_AUTO_MAN_2:
+    case RELE_AUTO_MAN_3:
+    case RELE_AUTO_MAN_4:
+    case RELE_AUTO_MAN_5:
+        sprintf(string, "%s", rele_cntrl_by_act_decr[dcts_rele[(uint8_t)(page - RELE_AUTO_MAN_0)/3].state.control_by_act]);
+        break;
+
+    case RELE_CONTROL_0:
+    case RELE_CONTROL_1:
+    case RELE_CONTROL_2:
+    case RELE_CONTROL_3:
+    case RELE_CONTROL_4:
+    case RELE_CONTROL_5:
+        sprintf(string, "%s", off_on_descr[dcts_rele[(uint8_t)(page - RELE_CONTROL_0)/3].state.control]);
         break;
 
     case MDB_ADDR:
@@ -899,7 +962,7 @@ static void get_param_value(char* string, menu_page_t page){
         break;
 
     case LIGHT_LVL:
-        sprintf(string, "%d%", LCD.backlight_lvl*10);
+        sprintf(string, "%d%%", LCD.backlight_lvl*10);
         break;
     case AUTO_OFF:
         sprintf(string, "%dс", LCD.auto_off*10);
@@ -926,63 +989,39 @@ static void get_param_value(char* string, menu_page_t page){
     }
 }
 
-/*static void main_menu_print (void){
-    char string[100];
-    menuItem* temp = selectedMenuItem->Parent;
-    sprintf(string, temp->Text);
-    LCD_set_xy(align_text_center(string, Font_7x10),52);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,53,127,63);
 
-    temp = selectedMenuItem->Previous;
-    sprintf(string, temp->Text);
-    LCD_set_xy(align_text_center(string, Font_7x10),39);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
-    sprintf(string, selectedMenuItem->Text);
-    LCD_set_xy(align_text_center(string, Font_7x10),26);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(5,26,120,38);
-    LCD_invert_area(6,27,119,37);
+static void info_print (void){
+    char string[50];
+    print_header();
 
-    temp = selectedMenuItem->Next;
-    sprintf(string, temp->Text);
-    LCD_set_xy(align_text_center(string, Font_7x10),14);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-
-    sprintf(string, "<назад      выбор>");
-    LCD_set_xy(0,0);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,0,42,11);
-    LCD_invert_area(83,0,127,11);
-}*/
-
-/*static void info_print (void){
-    char string[100];
-    menuItem* temp = selectedMenuItem->Parent;
-    sprintf(string, temp->Text);
-    LCD_set_xy(align_text_center(string, Font_7x10),52);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,53,127,63);
-
-    sprintf(string, "Имя: %s",dcts.dcts_name_cyr);
-    LCD_set_xy(2,40);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "Тип: %d",dcts.dcts_id);
-    LCD_set_xy(2,30);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "Адрес: %d",dcts.dcts_address);
+    sprintf(string, "Имя:%s",dcts.dcts_name_cyr);
+    LCD_set_xy(2,44);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    /*sprintf(string, "Тип:%d",dcts.dcts_id);
+    LCD_set_xy(2,36);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);*/
+    sprintf(string, "Адрес:%d",dcts.dcts_address);
+    LCD_set_xy(2,36);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    sprintf(string, "Версия:%s",dcts.dcts_ver);
+    LCD_set_xy(2,28);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    sprintf(string, "Питание:%.1fВ",(double)dcts.dcts_pwr);
     LCD_set_xy(2,20);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "Версия: %s",dcts.dcts_ver);
-    LCD_set_xy(2,10);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    sprintf(string, "Батарейка:%.1fВ",(double)dcts_meas[VBAT_VLT].value);
+    LCD_set_xy(2,12);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    sprintf(string, "%02d:%02d:%02d", dcts.dcts_rtc.hour, dcts.dcts_rtc.minute, dcts.dcts_rtc.second);
+    LCD_set_xy(70,44);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    sprintf(string, "%02d.%02d.%04d", dcts.dcts_rtc.day, dcts.dcts_rtc.month, dcts.dcts_rtc.year);
+    LCD_set_xy(70,36);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
 
-    sprintf(string, "<назад");
-    LCD_set_xy(0,0);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,0,42,11);
-}*/
+    print_back();
+}
 
 /*static void meas_channels_print(void){
     char string[100];

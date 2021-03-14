@@ -82,7 +82,7 @@
 #define STEP_OUT2_2 LL_GPIO_PIN_12
 #define STEP_PORT GPIOB
 
-#define MEAS_NUM 18
+#define MEAS_NUM 20
 #define ACT_NUM 4
 #define RELE_NUM 6
 #define SAVED_PARAMS_SIZE 21
