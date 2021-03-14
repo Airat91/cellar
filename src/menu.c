@@ -60,12 +60,13 @@ MAKE_MENU       (main_page,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
     MAKE_MENU   (act_ch_1,      act_ch_2,       act_ch_0,       act_channels,   NULL_ENTRY,     0,          ACT_CH_1,           0x00);
     MAKE_MENU   (act_ch_2,      act_ch_3,       act_ch_1,       act_channels,   NULL_ENTRY,     0,          ACT_CH_2,           0x00);
     MAKE_MENU   (act_ch_3,      act_ch_0,       act_ch_2,       act_channels,   NULL_ENTRY,     0,          ACT_CH_3,           0x00);
-  MAKE_MENU     (rele_channels, connection,     act_channels,   main_page,      rele_ch_0,      5,          RELE_CHANNELS,      "Релейные выходы");
-    MAKE_MENU   (rele_ch_0,     rele_ch_1,      rele_ch_4,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_0,          0x00);
+  MAKE_MENU     (rele_channels, connection,     act_channels,   main_page,      rele_ch_0,      6,          RELE_CHANNELS,      "Релейные выходы");
+    MAKE_MENU   (rele_ch_0,     rele_ch_1,      rele_ch_5,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_0,          0x00);
     MAKE_MENU   (rele_ch_1,     rele_ch_2,      rele_ch_0,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_1,          0x00);
     MAKE_MENU   (rele_ch_2,     rele_ch_3,      rele_ch_1,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_2,          0x00);
     MAKE_MENU   (rele_ch_3,     rele_ch_4,      rele_ch_2,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_3,          0x00);
-    MAKE_MENU   (rele_ch_4,     rele_ch_0,      rele_ch_3,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_4,          0x00);
+    MAKE_MENU   (rele_ch_4,     rele_ch_5,      rele_ch_3,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_4,          0x00);
+    MAKE_MENU   (rele_ch_5,     rele_ch_0,      rele_ch_4,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_5,          0x00);
   MAKE_MENU     (connection,    display,        rele_channels,  main_page,      mdb_addr,       6,          CONNECTION,         "Связь");
     MAKE_MENU   (mdb_addr,      bitrate,        noise_err,      connection,     EDITED_VAL,     0,          MDB_ADDR,           "Адрес ModBUS");
     MAKE_MENU   (bitrate,       overrun_err,    mdb_addr,       connection,     EDITED_VAL,     0,          MDB_BITRATE,        "Битрейт");
@@ -75,15 +76,15 @@ MAKE_MENU       (main_page,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
     MAKE_MENU   (noise_err,     mdb_addr,       frame_err,      connection,     NULL_ENTRY,     0,          MDB_NOISE_ERR,      "Ошибки помехи");
   MAKE_MENU     (display,       time,           connection,     main_page,      light_lvl,      2,          DISPLAY,            "Дисплей");
     MAKE_MENU   (light_lvl,     auto_off,       auto_off,       display,        EDITED_VAL,     0,          LIGHT_LVL,          "Яркость");
-    MAKE_MENU   (auto_off,      light_lvl,      light_lvl,      display,        EDITED_VAL,     0,          AUTO_OFF,           "Выкл. подсв.");
-  MAKE_MENU     (time,          date,           display,        main_page,      time_hour,      3,          TIME,               "SET TIME");
-    MAKE_MENU   (time_hour,     time_min,       time_sec,       time,           EDITED_VAL,     0,          TIME_HOUR,          "hour");
-    MAKE_MENU   (time_min,      time_sec,       time_hour,      time,           EDITED_VAL,     0,          TIME_MIN,           "minute");
-    MAKE_MENU   (time_sec,      time_hour,      time_min,       time,           EDITED_VAL,     0,          TIME_SEC,           "second");
-  MAKE_MENU     (date,          common_info,    time,           main_page,      date_day,       3,          DATE,               "SET DATE");
-    MAKE_MENU   (date_day,      date_month,     date_year,      date,           EDITED_VAL,     0,          DATE_DAY,           "day");
-    MAKE_MENU   (date_month,    date_year,      date_day,       date,           EDITED_VAL,     0,          DATE_MONTH,         "month");
-    MAKE_MENU   (date_year,     date_day,       date_month,     date,           EDITED_VAL,     0,          DATE_YEAR,          "year");
+    MAKE_MENU   (auto_off,      light_lvl,      light_lvl,      display,        EDITED_VAL,     0,          AUTO_OFF,           "Автовыкл. подсветки");
+  MAKE_MENU     (time,          date,           display,        main_page,      time_hour,      3,          TIME,               "Время");
+    MAKE_MENU   (time_hour,     time_min,       time_sec,       time,           EDITED_VAL,     0,          TIME_HOUR,          "Часы");
+    MAKE_MENU   (time_min,      time_sec,       time_hour,      time,           EDITED_VAL,     0,          TIME_MIN,           "Минуты");
+    MAKE_MENU   (time_sec,      time_hour,      time_min,       time,           EDITED_VAL,     0,          TIME_SEC,           "Секунды");
+  MAKE_MENU     (date,          common_info,    time,           main_page,      date_day,       3,          DATE,               "Дата");
+    MAKE_MENU   (date_day,      date_month,     date_year,      date,           EDITED_VAL,     0,          DATE_DAY,           "День");
+    MAKE_MENU   (date_month,    date_year,      date_day,       date,           EDITED_VAL,     0,          DATE_MONTH,         "Месяц");
+    MAKE_MENU   (date_year,     date_day,       date_month,     date,           EDITED_VAL,     0,          DATE_YEAR,          "Год");
 
 MAKE_MENU       (save_changes,  NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     0,          SAVE_CHANGES,       "Сохранить изм.");
 
@@ -91,35 +92,36 @@ MAKE_MENU       (save_changes,  NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
 /*========== FUNCTIONS ==========*/
 
 void menu_init (void){
-    strcpy(meas_ch_0.Text, dcts_meas[0].name);
-    strcpy(meas_ch_1.Text, dcts_meas[1].name);
-    strcpy(meas_ch_2.Text, dcts_meas[2].name);
-    strcpy(meas_ch_3.Text, dcts_meas[3].name);
-    strcpy(meas_ch_4.Text, dcts_meas[4].name);
-    strcpy(meas_ch_5.Text, dcts_meas[5].name);
-    strcpy(meas_ch_6.Text, dcts_meas[6].name);
-    strcpy(meas_ch_7.Text, dcts_meas[7].name);
-    strcpy(meas_ch_8.Text, dcts_meas[8].name);
-    strcpy(meas_ch_9.Text, dcts_meas[9].name);
-    strcpy(meas_ch_10.Text, dcts_meas[10].name);
-    strcpy(meas_ch_11.Text, dcts_meas[11].name);
-    strcpy(meas_ch_12.Text, dcts_meas[12].name);
-    strcpy(meas_ch_13.Text, dcts_meas[13].name);
-    strcpy(meas_ch_14.Text, dcts_meas[17].name);
-    strcpy(meas_ch_15.Text, dcts_meas[15].name);
-    strcpy(meas_ch_16.Text, dcts_meas[16].name);
-    strcpy(meas_ch_17.Text, dcts_meas[17].name);
+    strcpy(meas_ch_0.Text, dcts_meas[0].name_cyr);
+    strcpy(meas_ch_1.Text, dcts_meas[1].name_cyr);
+    strcpy(meas_ch_2.Text, dcts_meas[2].name_cyr);
+    strcpy(meas_ch_3.Text, dcts_meas[3].name_cyr);
+    strcpy(meas_ch_4.Text, dcts_meas[4].name_cyr);
+    strcpy(meas_ch_5.Text, dcts_meas[5].name_cyr);
+    strcpy(meas_ch_6.Text, dcts_meas[6].name_cyr);
+    strcpy(meas_ch_7.Text, dcts_meas[7].name_cyr);
+    strcpy(meas_ch_8.Text, dcts_meas[8].name_cyr);
+    strcpy(meas_ch_9.Text, dcts_meas[9].name_cyr);
+    strcpy(meas_ch_10.Text, dcts_meas[10].name_cyr);
+    strcpy(meas_ch_11.Text, dcts_meas[11].name_cyr);
+    strcpy(meas_ch_12.Text, dcts_meas[12].name_cyr);
+    strcpy(meas_ch_13.Text, dcts_meas[13].name_cyr);
+    strcpy(meas_ch_14.Text, dcts_meas[17].name_cyr);
+    strcpy(meas_ch_15.Text, dcts_meas[15].name_cyr);
+    strcpy(meas_ch_16.Text, dcts_meas[16].name_cyr);
+    strcpy(meas_ch_17.Text, dcts_meas[17].name_cyr);
 
-    strcpy(act_ch_0.Text, dcts_act[0].name);
-    strcpy(act_ch_1.Text, dcts_act[1].name);
-    strcpy(act_ch_2.Text, dcts_act[2].name);
-    strcpy(act_ch_3.Text, dcts_act[3].name);
+    strcpy(act_ch_0.Text, dcts_act[0].name_cyr);
+    strcpy(act_ch_1.Text, dcts_act[1].name_cyr);
+    strcpy(act_ch_2.Text, dcts_act[2].name_cyr);
+    strcpy(act_ch_3.Text, dcts_act[3].name_cyr);
 
-    strcpy(rele_ch_0.Text, dcts_rele[0].name);
-    strcpy(rele_ch_1.Text, dcts_rele[1].name);
-    strcpy(rele_ch_2.Text, dcts_rele[2].name);
-    strcpy(rele_ch_3.Text, dcts_rele[3].name);
-    strcpy(rele_ch_4.Text, dcts_rele[4].name);
+    strcpy(rele_ch_0.Text, dcts_rele[0].name_cyr);
+    strcpy(rele_ch_1.Text, dcts_rele[1].name_cyr);
+    strcpy(rele_ch_2.Text, dcts_rele[2].name_cyr);
+    strcpy(rele_ch_3.Text, dcts_rele[3].name_cyr);
+    strcpy(rele_ch_4.Text, dcts_rele[4].name_cyr);
+    strcpy(rele_ch_5.Text, dcts_rele[5].name_cyr);
 
     selectedMenuItem = &main_page;
 }

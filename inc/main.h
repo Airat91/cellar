@@ -84,7 +84,7 @@
 
 #define MEAS_NUM 18
 #define ACT_NUM 4
-#define RELE_NUM 5
+#define RELE_NUM 6
 #define SAVED_PARAMS_SIZE 21
 
 #if(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)

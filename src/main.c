@@ -98,6 +98,7 @@ static void MX_RTC_Init(void);
 //static void MX_ADC1_Init(void);
 //static void MX_USART1_UART_Init(void);
 static void tim2_init(void);
+static void print_header(void);
 static void main_page_print(u8 tick);
 static void menu_page_print(u8 tick);
 static void value_print(u8 tick);
@@ -108,6 +109,11 @@ static void meas_channels_print(void);
 static void calib_print(uint8_t start_channel);
 static void mdb_print(void);
 static void display_print(void);*/
+static void get_param_value(char* string, menu_page_t page);
+static void print_back(void);
+static void print_enter_right(void);
+static void print_enter_ok(void);
+static void print_change(void);
 static void save_params(void);
 static void restore_params(void);
 static void save_to_bkp(u8 bkp_num, u8 var);
@@ -247,6 +253,7 @@ typedef enum {
     FREEZER,
     FAN_CONVECTION,
     WTR_PUMP,
+    RESERV,
 }dcts_rele_t;
 
 void dcts_init (void) {
@@ -271,39 +278,40 @@ void dcts_init (void) {
 
     //meas_channels
 
-    dcts_meas_channel_init(TMPR_IN_1, "Tmpr 1", "Темп.1", "°C", "°C");
-    dcts_meas_channel_init(TMPR_IN_2, "Tmpr 2", "Темп.2", "°C", "°C");
-    dcts_meas_channel_init(TMPR_IN_AVG, "Tmpr avg", "Темп.ср.", "°C", "°C");
-    dcts_meas_channel_init(HUM_IN_1, "Hum 1", "Вл.1", "%", "%");
-    dcts_meas_channel_init(HUM_IN_2, "Hum 2", "Вл.2", "%", "%");
-    dcts_meas_channel_init(HUM_IN_AVG, "Hum avg", "Вл.ср.", "%", "%");
-    dcts_meas_channel_init(TMPR_OUT, "Tmpr out", "Темп. наружн.", "°C", "°C");
-    dcts_meas_channel_init(HUM_OUT, "Hum out", "Вл. наружн.", "%", "%");
+    dcts_meas_channel_init(TMPR_IN_1, "Tmpr 1", "Температура 1", "°C", "°C");
+    dcts_meas_channel_init(TMPR_IN_2, "Tmpr 2", "Температура 2", "°C", "°C");
+    dcts_meas_channel_init(TMPR_IN_AVG, "Tmpr avg", "Температура усред.", "°C", "°C");
+    dcts_meas_channel_init(HUM_IN_1, "Hum 1", "Влажность 1", "%", "%");
+    dcts_meas_channel_init(HUM_IN_2, "Hum 2", "Влажнсть 2", "%", "%");
+    dcts_meas_channel_init(HUM_IN_AVG, "Hum avg", "Влажность усред.", "%", "%");
+    dcts_meas_channel_init(TMPR_OUT, "Tmpr out", "Температура снаружи", "°C", "°C");
+    dcts_meas_channel_init(HUM_OUT, "Hum out", "Влажность снаружи", "%", "%");
     dcts_meas_channel_init(WTRL_LVL_HIGH_ADC, "Drain high ADC", "Дренаж верх АЦП", "adc", "adc");
     dcts_meas_channel_init(WTRL_LVL_HIGH_VLT, "Drain high V", "Дренаж верх В", "V", "В");
     dcts_meas_channel_init(WTRL_LVL_LOW_ADC, "Drain low ADC", "Дренаж низ АЦП", "adc", "adc");
     dcts_meas_channel_init(WTRL_LVL_LOW_VLT, "Drain low V", "Дренаж низ В", "V", "В");
-    dcts_meas_channel_init(VALVE_IN_DEGREE, "Valve IN degree", "Клапан приточ угол", "°", "°");
-    dcts_meas_channel_init(VALVE_IN_ADC, "Valve IN ADC", "Клапан приточ АЦП", "adc", "adc");
-    dcts_meas_channel_init(VALVE_IN_VLT, "Valve IN V", "Клапан приточ В", "V", "В");
-    dcts_meas_channel_init(VALVE_OUT_DEGREE, "Valve OUT degree", "Клапан вытяж угол", "°", "°");
-    dcts_meas_channel_init(VALVE_OUT_ADC, "Valve OUT ADC", "Клапан вытяж. АЦП", "adc", "adc");
-    dcts_meas_channel_init(VALVE_OUT_VLT, "Valve OUT V", "Клапан вытяж. В", "V", "В");
+    dcts_meas_channel_init(VALVE_IN_DEGREE, "Valve IN degree", "Клапан приточ. угол", "°", "°");
+    dcts_meas_channel_init(VALVE_IN_ADC, "Valve IN ADC", "Клапан приточ. АЦП", "adc", "adc");
+    dcts_meas_channel_init(VALVE_IN_VLT, "Valve IN V", "Клапан приточ. В", "V", "В");
+    dcts_meas_channel_init(VALVE_OUT_DEGREE, "Valve OUT degree", "Клапан вытяжной угол", "°", "°");
+    dcts_meas_channel_init(VALVE_OUT_ADC, "Valve OUT ADC", "Клапан вытяжной АЦП", "adc", "adc");
+    dcts_meas_channel_init(VALVE_OUT_VLT, "Valve OUT V", "Клапан вытяжной В", "V", "В");
 
     //act_channels
 
-    dcts_act_channel_init(VALVE_IN, "Valve IN", "Клапан приточ", "%", "%");
-    dcts_act_channel_init(VALVE_OUT, "Valve OUT", "Клапан вытяж", "%", "%");
+    dcts_act_channel_init(VALVE_IN, "Valve IN", "Клапан приточный", "%", "%");
+    dcts_act_channel_init(VALVE_OUT, "Valve OUT", "Клапан вытяжной", "%", "%");
     dcts_act_channel_init(TMPR_IN, "Tmpr IN", "Температура", "°C", "°C");
     dcts_act_channel_init(HUM_IN, "Hum IN", "Влажность", "%", "%");
 
     //rele_channels
 
-    dcts_rele_channel_init(FAN_IN, "Fan IN", "Вент приточ");
+    dcts_rele_channel_init(FAN_IN, "Fan IN", "Вентилятор приточный");
     dcts_rele_channel_init(HEATER, "Heater", "Нагреватель");
     dcts_rele_channel_init(FREEZER, "Freezer", "Охладитель");
     dcts_rele_channel_init(FAN_CONVECTION, "Convection", "Конвекция");
     dcts_rele_channel_init(WTR_PUMP, "Water pump", "Дренаж");
+    dcts_rele_channel_init(RESERV, "Reserv", "Резерв");
 }
 
 /**
@@ -475,77 +483,6 @@ void display_task(void const * argument){
             value_print(tick);
         }
 
-        /*switch (selectedMenuItem->Page){
-        case MAIN_PAGE:
-            main_page_print();
-            break;
-        case MAIN_MENU:
-        case COMMON_INFO:
-        case MEAS_CHANNELS:
-        case LVL_CALIB:
-        case TMPR_CALIB:
-        case CONNECTION:
-        case DISPLAY:
-            main_menu_print();
-            break;
-        case INFO:
-            info_print();
-            break;
-        case MEAS_CH_0:
-        case MEAS_CH_1:
-        case MEAS_CH_2:
-        case MEAS_CH_3:
-        case MEAS_CH_4:
-        case MEAS_CH_5:
-        case MEAS_CH_6:
-        case MEAS_CH_7:
-        case MEAS_CH_8:
-        case MEAS_CH_9:
-        case MEAS_CH_10:
-        case MEAS_CH_11:
-        case MEAS_CH_12:
-            meas_channels_print();
-            break;
-        case LVL_0:
-        case LVL_20:
-        case LVL_40:
-        case LVL_60:
-        case LVL_80:
-        case LVL_100:
-            calib_print(LVL_0);
-            break;
-        case ADC_0:
-        case ADC_10:
-        case ADC_20:
-        case ADC_30:
-        case ADC_40:
-        case ADC_50:
-        case ADC_60:
-        case ADC_70:
-        case ADC_80:
-        case ADC_90:
-        case ADC_100:
-            calib_print(ADC_0);
-            break;
-        case MDB_ADDR:
-        case MDB_BITRATE:
-        case MDB_OVERRUN_ERR:
-        case MDB_PARITY_ERR:
-        case MDB_FRAME_ERR:
-        case MDB_NOISE_ERR:
-            mdb_print();
-            break;
-        case LIGHT_LVL:
-        case AUTO_OFF:
-            display_print();
-            break;
-        case SAVE_CHANGES:
-            save_page_print();
-            break;
-        default:
-            error_page_print(selectedMenuItem->Page);
-        }*/
-
         LCD_update();
         if((LCD.auto_off != 0)&&(LCD.backlight == LCD_BACKLIGHT_ON)){
             LCD.auto_off_timeout += display_task_period;
@@ -554,6 +491,7 @@ void display_task(void const * argument){
                 LCD_backlight_shutdown();
             }
         }
+        tick++;
         osDelayUntil(&last_wake_time, display_task_period);
     }
 }
@@ -584,23 +522,6 @@ void navigation_task (void const * argument){
             if(button_click(BUTTON_OK, BUTTON_CLICK_TIME)){
                 menuChange(selectedMenuItem->Child);
             }
-
-
-            /*if((pressed_time[BUTTON_UP].pressed > 0)&&(pressed_time[BUTTON_UP].pressed < navigation_task_period)){
-                menuChange(selectedMenuItem->Previous);
-            }
-            if((pressed_time[BUTTON_DOWN].pressed > 0)&&(pressed_time[BUTTON_DOWN].pressed < navigation_task_period)){
-                menuChange(selectedMenuItem->Next);
-            }
-            if((pressed_time[BUTTON_LEFT].pressed > 0)&&(pressed_time[BUTTON_LEFT].pressed < navigation_task_period)){
-                menuChange(selectedMenuItem->Parent);
-            }
-            if((pressed_time[BUTTON_RIGHT].pressed > 0)&&(pressed_time[BUTTON_RIGHT].pressed < navigation_task_period)){
-                menuChange(selectedMenuItem->Child);
-            }
-            if((pressed_time[BUTTON_OK].pressed > 0)&&(pressed_time[BUTTON_OK].pressed < navigation_task_period)){
-                menuChange(selectedMenuItem->Child);
-            }*/
             break;
         case DIGIT_EDIT:
             switch (selectedMenuItem->Page){
@@ -745,39 +666,6 @@ void navigation_task (void const * argument){
                 }
                 pressed_time[BUTTON_OK].pressed = 0;
             }
-
-            /*if((pressed_time[BUTTON_UP].pressed > 0)&&(pressed_time[BUTTON_UP].pressed < navigation_task_period)){
-                if(*edit_val.p_val < edit_val.val_max){
-                    *edit_val.p_val += uint16_pow(10, (uint16_t)edit_val.digit);
-                }
-                if((*edit_val.p_val > edit_val.val_max)||(*edit_val.p_val < edit_val.val_min)){ //if out of range
-                    *edit_val.p_val = edit_val.val_max;
-                }
-            }
-            if((pressed_time[BUTTON_DOWN].pressed > 0)&&(pressed_time[BUTTON_DOWN].pressed < navigation_task_period)){
-                if(*edit_val.p_val > edit_val.val_min){
-                    *edit_val.p_val -= uint16_pow(10, (uint16_t)edit_val.digit);
-                }
-                if((*edit_val.p_val > edit_val.val_max)||(*edit_val.p_val < edit_val.val_min)){ //if out of range
-                    *edit_val.p_val = edit_val.val_min;
-                }
-            }
-            if((pressed_time[BUTTON_LEFT].pressed > 0)&&(pressed_time[BUTTON_LEFT].pressed < navigation_task_period)){
-                if(edit_val.digit < edit_val.digit_max){
-                    edit_val.digit++;
-                }
-            }
-            if((pressed_time[BUTTON_RIGHT].pressed > 0)&&(pressed_time[BUTTON_RIGHT].pressed < navigation_task_period)){
-                if(edit_val.digit > 0){
-                    edit_val.digit--;
-                }
-            }
-            if((pressed_time[BUTTON_OK].pressed > navigation_task_period)){
-                while(pressed_time[BUTTON_OK].last_state == BUTTON_PRESSED){
-                }
-                navigation_style = MENU_NAVIGATION;
-            }*/
-
             break;
         }
         if(button_click(BUTTON_BREAK,BUTTON_CLICK_TIME)){
@@ -882,15 +770,12 @@ static void main_page_print(u8 tick){
     }
     LCD_set_xy(align_text_center(string, Font_7x10)+27,0);*/
 
-    sprintf(string, "Здесь будет");
-    LCD_set_xy(align_text_center(string, Font_7x10),40);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "главное окно");
-    LCD_set_xy(align_text_center(string, Font_7x10),30);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    sprintf(string, "Здесь будет главное окно");
+    LCD_set_xy(2,30);
+    LCD_print_ticker(string,&Font_7x10,LCD_COLOR_BLACK,18,tick);
 }
 
-static void menu_page_print(u8 tick){
+static void print_header(void){
     char string[100];
     //print header
     menuItem* temp = selectedMenuItem->Parent;
@@ -898,9 +783,14 @@ static void menu_page_print(u8 tick){
     LCD_set_xy(align_text_center(string, Font_7x10),52);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_invert_area(0,53,127,63);
+}
+
+static void menu_page_print(u8 tick){
+    char string[100];
+    print_header();
 
     //print previous
-    temp = selectedMenuItem->Previous;
+    menuItem* temp = selectedMenuItem->Previous;
     sprintf(string, temp->Text);
     LCD_set_xy(align_text_center(string, Font_7x10),39);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
@@ -918,23 +808,119 @@ static void menu_page_print(u8 tick){
     LCD_set_xy(align_text_center(string, Font_7x10),14);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
-    sprintf(string, "<назад      выбор>");
-    LCD_set_xy(0,0);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,0,42,11);
-    LCD_invert_area(83,0,127,11);
+    print_back();
+    print_enter_right();
 }
 
 static void value_print(u8 tick){
     char string[100];
+    print_header();
 
-    sprintf(string, "Здесь будут");
-    LCD_set_xy(align_text_center(string, Font_7x10),40);
+    //print previous name
+    menuItem* temp = selectedMenuItem->Previous;
+    sprintf(string, temp->Text);
+    LCD_set_xy(2,39);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "основные параметры");
-    LCD_set_xy(align_text_center(string, Font_7x10),30);
+    LCD_fill_area(80,39,127,49,LCD_COLOR_WHITE);
+    get_param_value(string, temp->Page);
+    LCD_set_xy(align_text_right(string,Font_7x10),39);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
+    //print selected name
+    sprintf(string, selectedMenuItem->Text);
+    LCD_set_xy(2,26);
+    LCD_print_ticker(string,&Font_7x10,LCD_COLOR_BLACK,11,tick);
+    get_param_value(string, selectedMenuItem->Page);
+    LCD_set_xy(align_text_right(string,Font_7x10),26);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+
+    LCD_invert_area(0,26,82,38);
+    LCD_invert_area(1,27,81,37);
+
+    //print next name
+    temp = selectedMenuItem->Next;
+    sprintf(string, temp->Text);
+    LCD_set_xy(2,14);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    LCD_fill_area(80,14,127,24,LCD_COLOR_WHITE);
+    get_param_value(string, temp->Page);
+    LCD_set_xy(align_text_right(string,Font_7x10),14);
+    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+
+    print_back();
+    if(selectedMenuItem->Child == &EDITED_VAL){
+        print_change();
+    }
+}
+
+static void get_param_value(char* string, menu_page_t page){
+    switch (page) {
+    case MEAS_CH_0:
+    case MEAS_CH_1:
+    case MEAS_CH_2:
+    case MEAS_CH_3:
+    case MEAS_CH_4:
+    case MEAS_CH_5:
+    case MEAS_CH_6:
+    case MEAS_CH_7:
+    case MEAS_CH_8:
+    case MEAS_CH_9:
+    case MEAS_CH_10:
+    case MEAS_CH_11:
+    case MEAS_CH_12:
+    case MEAS_CH_13:
+    case MEAS_CH_14:
+    case MEAS_CH_15:
+    case MEAS_CH_16:
+    case MEAS_CH_17:
+        sprintf(string, "%.1f", (double)dcts_meas[(uint8_t)(page - MEAS_CH_0)].value);//, dcts_meas[(uint8_t)(page - MEAS_CH_0)].unit_cyr);
+        break;
+
+    case MDB_ADDR:
+        sprintf(string, "%d", dcts.dcts_address);
+        break;
+    case MDB_BITRATE:
+        sprintf(string, "%d", bitrate_array[bitrate_array_pointer]*100);
+        break;
+    case MDB_OVERRUN_ERR:
+        sprintf(string, "%d", uart_2.overrun_err_cnt);
+        break;
+    case MDB_PARITY_ERR:
+        sprintf(string, "%d", uart_2.parity_err_cnt);
+        break;
+    case MDB_FRAME_ERR:
+        sprintf(string, "%d", uart_2.frame_err_cnt);
+        break;
+    case MDB_NOISE_ERR:
+        sprintf(string, "%d", uart_2.noise_err_cnt);
+        break;
+
+    case LIGHT_LVL:
+        sprintf(string, "%d%", LCD.backlight_lvl*10);
+        break;
+    case AUTO_OFF:
+        sprintf(string, "%dс", LCD.auto_off*10);
+        break;
+
+    case TIME_HOUR:
+        sprintf(string, "%d", dcts.dcts_rtc.hour);
+        break;
+    case TIME_MIN:
+        sprintf(string, "%d", dcts.dcts_rtc.minute);
+        break;
+    case TIME_SEC:
+        sprintf(string, "%d", dcts.dcts_rtc.second);
+        break;
+    case DATE_DAY:
+        sprintf(string, "%d", dcts.dcts_rtc.day);
+        break;
+    case DATE_MONTH:
+        sprintf(string, "%d", dcts.dcts_rtc.month);
+        break;
+    case DATE_YEAR:
+        sprintf(string, "%d", dcts.dcts_rtc.year);
+        break;
+    }
 }
 
 /*static void main_menu_print (void){
@@ -1584,6 +1570,38 @@ void _Error_Handler(char *file, int line)
     {
     }
     /* USER CODE END Error_Handler_Debug */
+}
+
+static void print_back(void){
+    char string[100];
+    sprintf(string, "<назад");
+    LCD_set_xy(0,0);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    LCD_invert_area(0,0,30,8);
+}
+
+static void print_enter_right(void){
+    char string[100];
+    sprintf(string, "выбор>");
+    LCD_set_xy(align_text_right(string,Font_5x7),0);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    LCD_invert_area(97,0,127,8);
+}
+
+static void print_enter_ok(void){
+    char string[100];
+    sprintf(string, "ввод*");
+    LCD_set_xy(align_text_center(string,Font_5x7),0);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    LCD_invert_area(51,0,76,8);
+}
+
+static void print_change(void){
+    char string[100];
+    sprintf(string, "изменить>");
+    LCD_set_xy(align_text_right(string,Font_5x7),0);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    LCD_invert_area(82,0,127,8);
 }
 
 static void save_params(void){

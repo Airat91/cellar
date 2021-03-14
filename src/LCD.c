@@ -57,16 +57,29 @@ int LCD_init (void){
     HAL_Delay(2);
     LCD_send(LCD_RW_WRITE, LCD_RS_COMM, 0x36);
 
-    /*LCD_clr();
+    LCD_clr();
     LCD_backlight_on();
-    LCD_set_xy(0,38);
-    LCD_print("    LCD", &Font_7x10, LCD_COLOR_BLACK);
-    LCD_set_xy(0,20);
-    LCD_print("initialised", &Font_7x10, LCD_COLOR_BLACK);
-    LCD_set_xy(5,2);
-    LCD_print("successful", &Font_7x10, LCD_COLOR_BLACK);
+    /*LCD_set_xy(0,63-7*1);
+    LCD_print("ABCDEFGHIJKLMNOPQRSTUVWXY", &Font_5x7, LCD_COLOR_BLACK);
+    LCD_set_xy(0,63-7*2);
+    LCD_print("abcdefghijklmnopqrstuvwxy", &Font_5x7, LCD_COLOR_BLACK);
+    LCD_set_xy(0,63-7*3);
+    LCD_print("Z0123456789!\"#$%&'()*+,-", &Font_5x7, LCD_COLOR_BLACK);
+    LCD_set_xy(0,63-7*4);
+    LCD_print("z./:;<=>?@[\\]^_`{|}~", &Font_5x7, LCD_COLOR_BLACK);
+    LCD_set_xy(0,63-7*5);
+    LCD_print("", &Font_5x7, LCD_COLOR_BLACK);
+    LCD_set_xy(0,63-7*6);
+    LCD_print("ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×Ø", &Font_5x7, LCD_COLOR_BLACK);
+    LCD_set_xy(0,63-7*7);
+    LCD_print("àáâãäåæçèéêëìíîïðñòóôõö÷ø", &Font_5x7, LCD_COLOR_BLACK);
+    LCD_set_xy(0,63-7*8);
+    LCD_print("ÙÚÛÜÝÞß", &Font_5x7, LCD_COLOR_BLACK);
+    LCD_set_xy(0,63-7*9);
+    LCD_print("ùúûüýþÿ", &Font_5x7, LCD_COLOR_BLACK);
     LCD_update();
     HAL_Delay(2000);*/
+
     LCD_clr();
     LCD_update();
     LCD_backlight_on();
@@ -443,11 +456,17 @@ int LCD_print_char(char ch, FontDef_t* font, LCD_color_t color){
         result = -1;
     }else{
         // go through font
-        uint16_t line;
+        uint16_t data = 0;
         for (uint8_t line_num = 1; line_num < (font->FontHeight+1); line_num++) {
-            line = font->data[(ch - font->shift + 1) * font->FontHeight - line_num];
+            if(font->data_size_in_bytes == 1){
+                uint8_t * line_1_byte = font->data;
+                data = (uint16_t)(line_1_byte[(ch - font->shift + 1) * font->FontHeight - line_num] << 8);
+            }else if(sizeof(font->data) == 2){
+                uint16_t * line_2_byte = font->data;
+                data = line_2_byte[(ch - font->shift + 1) * font->FontHeight - line_num];
+            }
             for (uint8_t x_pos = 0; x_pos < font->FontWidth; x_pos++) {
-                if (line & (0x8000 >> x_pos)) {
+                if (data & (0x8000 >> x_pos)) {
                     LCD_set_pixel(LCD.x + x_pos, (LCD.y + line_num), color);
                 }
             }
@@ -475,6 +494,54 @@ int LCD_print(char* string, FontDef_t* font, LCD_color_t color){
             string++;
         }else{
             result = -1;
+        }
+    }
+    return result;
+}
+
+/**
+ * @brief Pring part of string as ticker
+ * @param string - pionter to string buffer
+ * @param font - pointer to structure with used font
+ * @param color - color used for drawing = {LCD_COLOR_BLACK, LCD_COLOR_WHITE}
+ * @param char_len - number of chars for show
+ * @param tick
+ * @ingroup LCD
+ * @return  0 - OK,\n
+ *          -1 - char_len > len of string,\n
+ *          -2 - have not free area for next char\n
+ */
+int LCD_print_ticker(char* string, FontDef_t* font, LCD_color_t color, uint8_t char_len, uint8_t tick){
+    int result = 0;
+    uint8_t len = (uint8_t)strlen(string);
+    uint8_t step_num;
+    uint8_t step;
+    if(char_len > len){
+        result = -1;
+        LCD_print(string, font, color);
+    }else{
+        step_num = (len - char_len)*2 + 4;
+        step = tick%step_num+1;
+
+        if(step <= 1){
+            step = 1;
+        }else if((step > 1)&&(step <= (step_num/2 - 1))){
+            step --;
+        }else if((step > (step_num/2 - 1))&&(step <= (step_num/2 + 1))){
+            step = (len - char_len)+1;
+        }else if((step > step_num/2 + 1)&&(step <= step_num - 1)){
+            step = step_num - step;
+        }else if(step > step_num - 1){
+            step = 1;
+        }
+        string += step - 1;
+        while (char_len) {
+            if (LCD_print_char(*string, font, color) == 0) {
+                string++;
+                char_len--;
+            }else{
+                result = -2;
+            }
         }
     }
     return result;
