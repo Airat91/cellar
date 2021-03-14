@@ -6,17 +6,17 @@
 /*========== DEFINES ==========*/
 
 #define MAKE_MENU(Name, Next, Previous, Parent, Child, Child_num, Page, Text) \
-    extern menuItem Next;     \
-    extern menuItem Previous; \
-    extern menuItem Parent;   \
-    extern menuItem Child;  \
-    menuItem Name = {(void*)&Next, (void*)&Previous, (void*)&Parent, (void*)&Child, (uint16_t)Child_num, (uint16_t)Page, { Text }}
+    extern const menuItem Next;     \
+    extern const menuItem Previous; \
+    extern const menuItem Parent;   \
+    extern const menuItem Child;  \
+    const menuItem Name = {(const void*)&Next, (const void*)&Previous, (const void*)&Parent, (const void*)&Child, (const uint16_t)Child_num, (const uint16_t)Page, { Text }}
 
-#define PREVIOUS   ((menuItem*)pgm_read_word(&selectedMenuItem->Previous))
+/*#define PREVIOUS   ((menuItem*)pgm_read_word(&selectedMenuItem->Previous))
 #define NEXT       ((menuItem*)pgm_read_word(&selectedMenuItem->Next))
 #define PARENT     ((menuItem*)pgm_read_word(&selectedMenuItem->Parent))
 #define CHILD      ((menuItem*)pgm_read_word(&selectedMenuItem->Child))
-#define SELECT		(pgm_read_byte(&selectedMenuItem->Select))
+#define SELECT		(pgm_read_byte(&selectedMenuItem->Select))*/
 #define NULL_ENTRY  Null_Menu
 #define EDITED_VAL  edit_value
 
@@ -53,10 +53,23 @@ typedef enum {
     ACT_CH_3,
     RELE_CHANNELS,
     RELE_CH_0,
+    RELE_AUTO_MAN_0,
+    RELE_CONTROL_0,
     RELE_CH_1,
+    RELE_AUTO_MAN_1,
+    RELE_CONTROL_1,
     RELE_CH_2,
+    RELE_AUTO_MAN_2,
+    RELE_CONTROL_2,
     RELE_CH_3,
+    RELE_AUTO_MAN_3,
+    RELE_CONTROL_3,
     RELE_CH_4,
+    RELE_AUTO_MAN_4,
+    RELE_CONTROL_4,
+    RELE_CH_5,
+    RELE_AUTO_MAN_5,
+    RELE_CONTROL_5,
     CONNECTION,
     MDB_ADDR,
     MDB_BITRATE,
@@ -80,23 +93,23 @@ typedef enum {
 } menu_page_t;
 
 typedef struct {
-    void            *Next;
-    void            *Previous;
-    void            *Parent;
-    void            *Child;
-    uint16_t        Child_num;
-    menu_page_t     Page;
-    const char      Text[20];
+    const void          *Next;
+    const void          *Previous;
+    const void          *Parent;
+    const void          *Child;
+    const uint16_t      Child_num;
+    const menu_page_t   Page;
+    const char          Text[20];
 } menuItem;
 
 
 
 /*========= GLOBAL VARIABLES ==========*/
 
-extern menuItem main_page;
-extern menuItem save_changes;
+extern const menuItem main_page;
+extern const menuItem save_changes;
 extern menuItem* selectedMenuItem;
-extern menuItem edit_value;
+extern const menuItem edit_value;
 
 /*========== FUNCTION PROTOTYPES ==========*/
 

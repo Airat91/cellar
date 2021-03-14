@@ -690,7 +690,7 @@ void navigation_task (void const * argument){
 }
 
 static void error_page_print(menu_page_t page){
-    char string[100];
+    char string[50];
 
     LCD_set_xy(25,45);
     sprintf(string, "ÑÒÐÀÍÈÖÀ ÍÅ");
@@ -706,7 +706,7 @@ static void error_page_print(menu_page_t page){
 }
 
 static void main_page_print(u8 tick){
-    char string[100];
+    char string[50];
 
     /*
     // print water tank
@@ -776,7 +776,7 @@ static void main_page_print(u8 tick){
 }
 
 static void print_header(void){
-    char string[100];
+    char string[50];
     //print header
     menuItem* temp = selectedMenuItem->Parent;
     sprintf(string, temp->Text);
@@ -786,14 +786,17 @@ static void print_header(void){
 }
 
 static void menu_page_print(u8 tick){
-    char string[100];
+    char string[50];
     print_header();
 
-    //print previous
-    menuItem* temp = selectedMenuItem->Previous;
-    sprintf(string, temp->Text);
-    LCD_set_xy(align_text_center(string, Font_7x10),39);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    menuItem* temp = selectedMenuItem->Parent;
+    if(temp->Child_num >= 3){
+        //print previous
+        temp = selectedMenuItem->Previous;
+        sprintf(string, temp->Text);
+        LCD_set_xy(align_text_center(string, Font_7x10),39);
+        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    }
 
     //print selected
     sprintf(string, selectedMenuItem->Text);
@@ -813,7 +816,7 @@ static void menu_page_print(u8 tick){
 }
 
 static void value_print(u8 tick){
-    char string[100];
+    char string[50];
     print_header();
 
     //print previous name
@@ -1351,7 +1354,7 @@ static void get_param_value(char* string, menu_page_t page){
 
 
 static void save_page_print (void){
-    char string[100];
+    char string[50];
 
     LCD_fill_area(5,20,123,48,LCD_COLOR_BLACK);
     LCD_fill_area(6,21,122,47,LCD_COLOR_WHITE);
@@ -1421,7 +1424,7 @@ void uart_task(void const * argument){
     (void)argument;
     uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
     uint16_t tick = 0;
-    char string[100];
+    char string[50];
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
         if((uart_2.state & UART_STATE_RECIEVE)&&\

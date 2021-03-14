@@ -11,7 +11,7 @@
   */
 
 
-static menuItem Null_Menu = {
+static const menuItem Null_Menu = {
     .Next = (void*)0,
     .Previous = (void*)0,
     .Parent = (void*)0,
@@ -20,7 +20,7 @@ static menuItem Null_Menu = {
     .Page = 0,
     .Text = {0},
 };
-menuItem edit_value = {
+const menuItem edit_value = {
     .Next = (void*)0,
     .Previous = (void*)0,
     .Parent = (void*)0,
@@ -37,36 +37,48 @@ MAKE_MENU       (main_page,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
   MAKE_MENU     (common_info,   meas_channels,  date,           main_page,      info,           1,          COMMON_INFO,        "Об устройстве");
     MAKE_MENU   (info,          NULL_ENTRY,     NULL_ENTRY,     common_info,    NULL_ENTRY,     0,          INFO,               "Об устройстве");
   MAKE_MENU     (meas_channels, act_channels,   common_info,    main_page,      meas_ch_0,      18,         MEAS_CHANNELS,      "Изм. каналы");
-    MAKE_MENU   (meas_ch_0,     meas_ch_1,      meas_ch_17,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_0,          0x00);
-    MAKE_MENU   (meas_ch_1,     meas_ch_2,      meas_ch_0,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_1,          0x00);
-    MAKE_MENU   (meas_ch_2,     meas_ch_3,      meas_ch_1,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_2,          0x00);
-    MAKE_MENU   (meas_ch_3,     meas_ch_4,      meas_ch_2,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_3,          0x00);
-    MAKE_MENU   (meas_ch_4,     meas_ch_5,      meas_ch_3,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_4,          0x00);
-    MAKE_MENU   (meas_ch_5,     meas_ch_6,      meas_ch_4,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_5,          0x00);
-    MAKE_MENU   (meas_ch_6,     meas_ch_7,      meas_ch_5,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_6,          0x00);
-    MAKE_MENU   (meas_ch_7,     meas_ch_8,      meas_ch_6,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_7,          0x00);
-    MAKE_MENU   (meas_ch_8,     meas_ch_9,      meas_ch_7,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_8,          0x00);
-    MAKE_MENU   (meas_ch_9,     meas_ch_10,     meas_ch_8,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_9,          0x00);
-    MAKE_MENU   (meas_ch_10,    meas_ch_11,     meas_ch_9,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_10,         0x00);
-    MAKE_MENU   (meas_ch_11,    meas_ch_12,     meas_ch_10,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_11,         0x00);
-    MAKE_MENU   (meas_ch_12,    meas_ch_13,     meas_ch_11,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_12,         0x00);
-    MAKE_MENU   (meas_ch_13,    meas_ch_14,     meas_ch_12,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_13,         0x00);
-    MAKE_MENU   (meas_ch_14,    meas_ch_15,     meas_ch_13,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_14,         0x00);
-    MAKE_MENU   (meas_ch_15,    meas_ch_16,     meas_ch_14,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_15,         0x00);
-    MAKE_MENU   (meas_ch_16,    meas_ch_17,     meas_ch_15,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_16,         0x00);
-    MAKE_MENU   (meas_ch_17,    meas_ch_0,      meas_ch_16,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_17,         0x00);
+    MAKE_MENU   (meas_ch_0,     meas_ch_1,      meas_ch_17,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_0,          "Температура 1");
+    MAKE_MENU   (meas_ch_1,     meas_ch_2,      meas_ch_0,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_1,          "Температура 2");
+    MAKE_MENU   (meas_ch_2,     meas_ch_3,      meas_ch_1,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_2,          "Температура усред.");
+    MAKE_MENU   (meas_ch_3,     meas_ch_4,      meas_ch_2,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_3,          "Влажность 1");
+    MAKE_MENU   (meas_ch_4,     meas_ch_5,      meas_ch_3,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_4,          "Влажнсть 2");
+    MAKE_MENU   (meas_ch_5,     meas_ch_6,      meas_ch_4,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_5,          "Влажность усред.");
+    MAKE_MENU   (meas_ch_6,     meas_ch_7,      meas_ch_5,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_6,          "Температура снаружи");
+    MAKE_MENU   (meas_ch_7,     meas_ch_8,      meas_ch_6,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_7,          "Влажность снаружи");
+    MAKE_MENU   (meas_ch_8,     meas_ch_9,      meas_ch_7,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_8,          "Дренаж верх АЦП");
+    MAKE_MENU   (meas_ch_9,     meas_ch_10,     meas_ch_8,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_9,          "Дренаж верх В");
+    MAKE_MENU   (meas_ch_10,    meas_ch_11,     meas_ch_9,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_10,         "Дренаж низ АЦП");
+    MAKE_MENU   (meas_ch_11,    meas_ch_12,     meas_ch_10,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_11,         "Дренаж низ В");
+    MAKE_MENU   (meas_ch_12,    meas_ch_13,     meas_ch_11,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_12,         "Клапан приточ. угол");
+    MAKE_MENU   (meas_ch_13,    meas_ch_14,     meas_ch_12,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_13,         "Клапан приточ. АЦП");
+    MAKE_MENU   (meas_ch_14,    meas_ch_15,     meas_ch_13,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_14,         "Клапан приточ. В");
+    MAKE_MENU   (meas_ch_15,    meas_ch_16,     meas_ch_14,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_15,         "Клапан вытяжной угол");
+    MAKE_MENU   (meas_ch_16,    meas_ch_17,     meas_ch_15,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_16,         "Клапан вытяжной АЦП");
+    MAKE_MENU   (meas_ch_17,    meas_ch_0,      meas_ch_16,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_17,         "Клапан вытяжной В");
   MAKE_MENU     (act_channels,  rele_channels,  meas_channels,  main_page,      act_ch_0,       13,         ACT_CHANNELS,       "Упр. каналы");
-    MAKE_MENU   (act_ch_0,      act_ch_1,       act_ch_3,       act_channels,   NULL_ENTRY,     0,          ACT_CH_0,           0x00);
-    MAKE_MENU   (act_ch_1,      act_ch_2,       act_ch_0,       act_channels,   NULL_ENTRY,     0,          ACT_CH_1,           0x00);
-    MAKE_MENU   (act_ch_2,      act_ch_3,       act_ch_1,       act_channels,   NULL_ENTRY,     0,          ACT_CH_2,           0x00);
-    MAKE_MENU   (act_ch_3,      act_ch_0,       act_ch_2,       act_channels,   NULL_ENTRY,     0,          ACT_CH_3,           0x00);
+    MAKE_MENU   (act_ch_0,      act_ch_1,       act_ch_3,       act_channels,   NULL_ENTRY,     0,          ACT_CH_0,           "Клапан приточный");
+    MAKE_MENU   (act_ch_1,      act_ch_2,       act_ch_0,       act_channels,   NULL_ENTRY,     0,          ACT_CH_1,           "Клапан вытяжной");
+    MAKE_MENU   (act_ch_2,      act_ch_3,       act_ch_1,       act_channels,   NULL_ENTRY,     0,          ACT_CH_2,           "Температура");
+    MAKE_MENU   (act_ch_3,      act_ch_0,       act_ch_2,       act_channels,   NULL_ENTRY,     0,          ACT_CH_3,           "Влажность");
   MAKE_MENU     (rele_channels, connection,     act_channels,   main_page,      rele_ch_0,      6,          RELE_CHANNELS,      "Релейные выходы");
-    MAKE_MENU   (rele_ch_0,     rele_ch_1,      rele_ch_5,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_0,          0x00);
-    MAKE_MENU   (rele_ch_1,     rele_ch_2,      rele_ch_0,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_1,          0x00);
-    MAKE_MENU   (rele_ch_2,     rele_ch_3,      rele_ch_1,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_2,          0x00);
-    MAKE_MENU   (rele_ch_3,     rele_ch_4,      rele_ch_2,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_3,          0x00);
-    MAKE_MENU   (rele_ch_4,     rele_ch_5,      rele_ch_3,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_4,          0x00);
-    MAKE_MENU   (rele_ch_5,     rele_ch_0,      rele_ch_4,      rele_channels,  NULL_ENTRY,     0,          RELE_CH_5,          0x00);
+    MAKE_MENU   (rele_ch_0,     rele_ch_1,      rele_ch_5,      rele_channels,  rele_auto_0,    2,          RELE_CH_0,          "Приточка");
+      MAKE_MENU (rele_auto_0,   rele_cntrl_0,   rele_cntrl_0,   rele_ch_0,      EDITED_VAL,     0,          RELE_AUTO_MAN_0,    "Управление");
+      MAKE_MENU (rele_cntrl_0,  rele_auto_0,    rele_auto_0,    rele_ch_0,      EDITED_VAL,     0,          RELE_CONTROL_0,     "Состояние");
+    MAKE_MENU   (rele_ch_1,     rele_ch_2,      rele_ch_0,      rele_channels,  rele_auto_1,    2,          RELE_CH_1,          "Нагреватель");
+      MAKE_MENU (rele_auto_1,   rele_cntrl_1,   rele_cntrl_1,   rele_ch_1,      EDITED_VAL,     0,          RELE_AUTO_MAN_1,    "Управление");
+      MAKE_MENU (rele_cntrl_1,  rele_auto_1,    rele_auto_1,    rele_ch_1,      EDITED_VAL,     0,          RELE_CONTROL_1,     "Состояние");
+    MAKE_MENU   (rele_ch_2,     rele_ch_3,      rele_ch_1,      rele_channels,  rele_auto_2,    2,          RELE_CH_2,          "Охладитель");
+      MAKE_MENU (rele_auto_2,   rele_cntrl_2,   rele_cntrl_2,   rele_ch_2,      EDITED_VAL,     0,          RELE_AUTO_MAN_2,    "Управление");
+      MAKE_MENU (rele_cntrl_2,  rele_auto_2,    rele_auto_2,    rele_ch_2,      EDITED_VAL,     0,          RELE_CONTROL_2,     "Состояние");
+    MAKE_MENU   (rele_ch_3,     rele_ch_4,      rele_ch_2,      rele_channels,  rele_auto_3,    2,          RELE_CH_3,          "Конвекция");
+      MAKE_MENU (rele_auto_3,   rele_cntrl_3,   rele_cntrl_3,   rele_ch_3,      EDITED_VAL,     0,          RELE_AUTO_MAN_3,    "Управление");
+      MAKE_MENU (rele_cntrl_3,  rele_auto_3,    rele_auto_3,    rele_ch_3,      EDITED_VAL,     0,          RELE_CONTROL_3,     "Состояние");
+    MAKE_MENU   (rele_ch_4,     rele_ch_5,      rele_ch_3,      rele_channels,  rele_auto_4,    2,          RELE_CH_4,          "Дренаж");
+      MAKE_MENU (rele_auto_4,   rele_cntrl_4,   rele_cntrl_4,   rele_ch_4,      EDITED_VAL,     0,          RELE_AUTO_MAN_4,    "Управление");
+      MAKE_MENU (rele_cntrl_4,  rele_auto_4,    rele_auto_4,    rele_ch_4,      EDITED_VAL,     0,          RELE_CONTROL_4,     "Состояние");
+    MAKE_MENU   (rele_ch_5,     rele_ch_0,      rele_ch_4,      rele_channels,  rele_auto_5,    2,          RELE_CH_5,          "Резерв");
+      MAKE_MENU (rele_auto_5,   rele_cntrl_5,   rele_cntrl_5,   rele_ch_5,      EDITED_VAL,     0,          RELE_AUTO_MAN_5,    "Управление");
+      MAKE_MENU (rele_cntrl_5,  rele_auto_5,    rele_auto_5,    rele_ch_5,      EDITED_VAL,     0,          RELE_CONTROL_5,     "Состояние");
   MAKE_MENU     (connection,    display,        rele_channels,  main_page,      mdb_addr,       6,          CONNECTION,         "Связь");
     MAKE_MENU   (mdb_addr,      bitrate,        noise_err,      connection,     EDITED_VAL,     0,          MDB_ADDR,           "Адрес ModBUS");
     MAKE_MENU   (bitrate,       overrun_err,    mdb_addr,       connection,     EDITED_VAL,     0,          MDB_BITRATE,        "Битрейт");
@@ -92,37 +104,6 @@ MAKE_MENU       (save_changes,  NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
 /*========== FUNCTIONS ==========*/
 
 void menu_init (void){
-    strcpy(meas_ch_0.Text, dcts_meas[0].name_cyr);
-    strcpy(meas_ch_1.Text, dcts_meas[1].name_cyr);
-    strcpy(meas_ch_2.Text, dcts_meas[2].name_cyr);
-    strcpy(meas_ch_3.Text, dcts_meas[3].name_cyr);
-    strcpy(meas_ch_4.Text, dcts_meas[4].name_cyr);
-    strcpy(meas_ch_5.Text, dcts_meas[5].name_cyr);
-    strcpy(meas_ch_6.Text, dcts_meas[6].name_cyr);
-    strcpy(meas_ch_7.Text, dcts_meas[7].name_cyr);
-    strcpy(meas_ch_8.Text, dcts_meas[8].name_cyr);
-    strcpy(meas_ch_9.Text, dcts_meas[9].name_cyr);
-    strcpy(meas_ch_10.Text, dcts_meas[10].name_cyr);
-    strcpy(meas_ch_11.Text, dcts_meas[11].name_cyr);
-    strcpy(meas_ch_12.Text, dcts_meas[12].name_cyr);
-    strcpy(meas_ch_13.Text, dcts_meas[13].name_cyr);
-    strcpy(meas_ch_14.Text, dcts_meas[17].name_cyr);
-    strcpy(meas_ch_15.Text, dcts_meas[15].name_cyr);
-    strcpy(meas_ch_16.Text, dcts_meas[16].name_cyr);
-    strcpy(meas_ch_17.Text, dcts_meas[17].name_cyr);
-
-    strcpy(act_ch_0.Text, dcts_act[0].name_cyr);
-    strcpy(act_ch_1.Text, dcts_act[1].name_cyr);
-    strcpy(act_ch_2.Text, dcts_act[2].name_cyr);
-    strcpy(act_ch_3.Text, dcts_act[3].name_cyr);
-
-    strcpy(rele_ch_0.Text, dcts_rele[0].name_cyr);
-    strcpy(rele_ch_1.Text, dcts_rele[1].name_cyr);
-    strcpy(rele_ch_2.Text, dcts_rele[2].name_cyr);
-    strcpy(rele_ch_3.Text, dcts_rele[3].name_cyr);
-    strcpy(rele_ch_4.Text, dcts_rele[4].name_cyr);
-    strcpy(rele_ch_5.Text, dcts_rele[5].name_cyr);
-
     selectedMenuItem = &main_page;
 }
 
