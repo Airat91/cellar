@@ -72,12 +72,14 @@
 #define FEEDER 0
 #define DEFAULT_TASK_PERIOD 100
 #define RELEASE 0
+#define DO_NUM 6
+#define IN_CAHHEL_NUM 8
 
 /* Private variables ---------------------------------------------------------*/
 RTC_HandleTypeDef hrtc;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
-osThreadId defaultTaskHandle;
+osThreadId rtcTaskHandle;
 osThreadId buttonsTaskHandle;
 osThreadId displayTaskHandle;
 osThreadId menuTaskHandle;
@@ -92,9 +94,9 @@ osThreadId uartTaskHandle;
 void SystemClock_Config(void);
 //static void MX_GPIO_Init(void);
 void dcts_init (void);
-static void do_init(void);
+static void channels_init(void);
 static void MX_IWDG_Init(void);
-static void MX_RTC_Init(void);
+static void RTC_Init(void);
 //static void MX_ADC1_Init(void);
 //static void MX_USART1_UART_Init(void);
 static void tim2_init(void);
@@ -148,12 +150,23 @@ static const char off_on_descr[2][10] = {
     "Выкл.",
     "Вкл.",
 };
-static const char rele_cntrl_by_act_decr[2][10] = {
+static const char manual_auto_descr[2][10] = {
     "Ручной",
     "Авто",
 };
 
-ch_t ch[8] = {
+in_channel_t input_ch[8] = {
+    {.mode = CH_MODE_ADC,   .port = CH_0_PORT, .pin = CH_0_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_0, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_1},
+    {.mode = CH_MODE_ADC,   .port = CH_1_PORT, .pin = CH_1_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_1, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_2},
+    {.mode = CH_MODE_AM3202,.port = CH_2_PORT, .pin = CH_2_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_2, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_3},
+    {.mode = CH_MODE_AM3202,.port = CH_3_PORT, .pin = CH_3_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_3, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_4},
+    {.mode = CH_MODE_AM3202,.port = CH_4_PORT, .pin = CH_4_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_6, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_1},
+    {.mode = CH_MODE_PWM,   .port = CH_5_PORT, .pin = CH_5_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_7, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_2},
+    {.mode = CH_MODE_PWM,   .port = CH_6_PORT, .pin = CH_6_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_8, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_3},
+    {.mode = CH_MODE_NONE,  .port = CH_7_PORT, .pin = CH_7_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_9, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_4},
+};
+
+const ch_t ch[8] = {
     {.pin = CH_0_PIN, .port = CH_0_PORT},
     {.pin = CH_1_PIN, .port = CH_1_PORT},
     {.pin = CH_2_PIN, .port = CH_2_PORT},
@@ -164,7 +177,7 @@ ch_t ch[8] = {
     {.pin = CH_7_PIN, .port = CH_7_PORT},
 };
 
-ch_t do_ch[6] = {
+const ch_t do_ch[6] = {
     {.pin = DO_0_PIN, .port = DO_0_PORT},
     {.pin = DO_1_PIN, .port = DO_1_PORT},
     {.pin = DO_2_PIN, .port = DO_2_PORT},
@@ -183,7 +196,7 @@ int main(void){
 
     HAL_Init();
     SystemClock_Config();
-    do_init();
+    channels_init();
     tim2_init();
     dcts_init();
     restore_params();
@@ -191,13 +204,9 @@ int main(void){
 #if RELEASE
     MX_IWDG_Init();
 #endif //RELEASE
-    /*
-    MX_RTC_Init();
-    */
-    /*
-    osThreadDef(own_task, default_task, osPriorityNormal, 0, 364);
-    defaultTaskHandle = osThreadCreate(osThread(own_task), NULL);
-    */
+
+    osThreadDef(rtc_task, rtc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
+    rtcTaskHandle = osThreadCreate(osThread(rtc_task), NULL);
 
     osThreadDef(display_task, display_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*4);
     displayTaskHandle = osThreadCreate(osThread(display_task), NULL);
@@ -217,6 +226,9 @@ int main(void){
     /*osThreadDef(uart_task, uart_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*4);
     uartTaskHandle = osThreadCreate(osThread(uart_task), NULL);
 */
+
+    osThreadDef(control_task, control_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*4);
+    controlTaskHandle = osThreadCreate(osThread(control_task), NULL);
 
     /* Start scheduler */
     osKernelStart();
@@ -280,6 +292,7 @@ void dcts_init (void) {
     dcts.dcts_rtc.hour = 12;
     dcts.dcts_rtc.minute = 0;
     dcts.dcts_rtc.second = 0;
+    dcts.dcts_rtc.state = RTC_STATE_SET;
     dcts.dcts_pwr = 0.0f;
     dcts.dcts_meas_num = MEAS_NUM;
     dcts.dcts_rele_num = RELE_NUM;
@@ -388,7 +401,89 @@ void SystemClock_Config(void)
 }
 
 /* RTC init function */
-static void MX_RTC_Init(void){
+static void RTC_Init(void){
+    RTC_TimeTypeDef Time = {0};
+    RTC_DateTypeDef Date = {0};
+    __HAL_RCC_BKP_CLK_ENABLE();
+    __HAL_RCC_PWR_CLK_ENABLE();
+    __HAL_RCC_RTC_ENABLE();
+    hrtc.Instance = RTC;
+    hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
+    if (HAL_RTC_Init(&hrtc) != HAL_OK) {
+        _Error_Handler(__FILE__, __LINE__);
+    }
+
+    if(dcts.dcts_rtc.state == RTC_STATE_SET){
+        Time.Hours = dcts.dcts_rtc.hour;
+        Time.Minutes = dcts.dcts_rtc.minute;
+        Time.Seconds = dcts.dcts_rtc.second;
+
+        Date.Date = dcts.dcts_rtc.day;
+        Date.Month = dcts.dcts_rtc.month;
+        Date.Year = (uint8_t)(dcts.dcts_rtc.year - 2000);
+
+        HAL_RTC_SetTime(&hrtc, &Time, RTC_FORMAT_BIN);
+        HAL_RTC_SetDate(&hrtc, &Date, RTC_FORMAT_BIN);
+    }
+    dcts.dcts_rtc.state = RTC_STATE_READY;
+}
+/**
+ * @brief RTC task
+ * @param argument - None
+ * @todo add group
+ */
+#define RTC_TASK_PERIOD 500
+void rtc_task(void const * argument){
+
+    (void)argument;
+    RTC_TimeTypeDef time = {0};
+    RTC_DateTypeDef date = {0};
+    RTC_Init();
+    uint32_t last_wake_time = osKernelSysTick();
+    while(1){
+        switch (dcts.dcts_rtc.state) {
+        case RTC_STATE_READY:   //update dcts_rtc from rtc
+            HAL_RTC_GetDate(&hrtc,&date,RTC_FORMAT_BIN);
+            HAL_RTC_GetTime(&hrtc,&time,RTC_FORMAT_BIN);
+
+            taskENTER_CRITICAL();
+            dcts.dcts_rtc.hour = time.Hours;
+            dcts.dcts_rtc.minute = time.Minutes;
+            dcts.dcts_rtc.second = time.Seconds;
+
+            dcts.dcts_rtc.day = date.Date;
+            dcts.dcts_rtc.month = date.Month;
+            dcts.dcts_rtc.year = date.Year + 2000;
+            dcts.dcts_rtc.weekday = date.WeekDay;
+            taskEXIT_CRITICAL();
+            break;
+        case RTC_STATE_SET:     //set new values from dcts_rtc
+            time.Hours = dcts.dcts_rtc.hour;
+            time.Minutes = dcts.dcts_rtc.minute;
+            time.Seconds = dcts.dcts_rtc.second;
+
+            date.Date = dcts.dcts_rtc.day;
+            date.Month = dcts.dcts_rtc.month;
+            date.Year = (uint8_t)(dcts.dcts_rtc.year - 2000);
+
+            HAL_RTC_SetTime(&hrtc, &time, RTC_FORMAT_BIN);
+            HAL_RTC_SetDate(&hrtc, &date, RTC_FORMAT_BIN);
+
+            dcts.dcts_rtc.state = RTC_STATE_READY;
+            break;
+        default:
+            break;
+        }
+#if RELEASE
+        HAL_IWDG_Refresh(&hiwdg);
+#endif //RELEASE
+        osDelayUntil(&last_wake_time, RTC_TASK_PERIOD);
+    }
+}
+
+
+/* RTC init function */
+/*static void MX_RTC_Init(void){
     RTC_TimeTypeDef sTime = {0};
     RTC_DateTypeDef sDate = {0};
     __HAL_RCC_BKP_CLK_ENABLE();
@@ -432,7 +527,7 @@ static void MX_RTC_Init(void){
         dcts.dcts_rtc.year = sDate.Year + 2000;
         dcts.dcts_rtc.weekday = sDate.WeekDay;
     }
-}
+}*/
 
 
 /**
@@ -440,7 +535,7 @@ static void MX_RTC_Init(void){
  * @param argument - None
  * @todo add group
  */
-void default_task(void const * argument){
+/*void default_task(void const * argument){
 
     (void)argument;
     RTC_TimeTypeDef time;
@@ -464,7 +559,7 @@ void default_task(void const * argument){
         //HAL_IWDG_Refresh(&hiwdg);
         osDelayUntil(&last_wake_time, DEFAULT_TASK_PERIOD);
     }
-}
+}*/
 
 /**
  * @brief display_task
@@ -930,7 +1025,7 @@ static void get_param_value(char* string, menu_page_t page){
     case RELE_AUTO_MAN_3:
     case RELE_AUTO_MAN_4:
     case RELE_AUTO_MAN_5:
-        sprintf(string, "%s", rele_cntrl_by_act_decr[dcts_rele[(uint8_t)(page - RELE_AUTO_MAN_0)/3].state.control_by_act]);
+        sprintf(string, "%s", manual_auto_descr[dcts_rele[(uint8_t)(page - RELE_AUTO_MAN_0)/3].state.control_by_act]);
         break;
 
     case RELE_CONTROL_0:
@@ -998,9 +1093,6 @@ static void info_print (void){
     sprintf(string, "Имя:%s",dcts.dcts_name_cyr);
     LCD_set_xy(2,44);
     LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
-    /*sprintf(string, "Тип:%d",dcts.dcts_id);
-    LCD_set_xy(2,36);
-    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);*/
     sprintf(string, "Адрес:%d",dcts.dcts_address);
     LCD_set_xy(2,36);
     LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
@@ -1022,34 +1114,6 @@ static void info_print (void){
 
     print_back();
 }
-
-/*static void meas_channels_print(void){
-    char string[100];
-    uint8_t channel = 0;
-    menuItem* temp = selectedMenuItem->Parent;
-    sprintf(string, temp->Text);
-    LCD_set_xy(align_text_center(string, Font_7x10),52);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,53,127,63);
-
-    temp = selectedMenuItem;
-    for(uint8_t i = 0; i < 2; i++){
-        channel = (uint8_t)temp->Page - MEAS_CH_0;
-        sprintf(string, "%s:",dcts_meas[channel].name_cyr);
-        LCD_set_xy(2,41-21*i);
-        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-        sprintf(string, "%.2f(%s) ", dcts_meas[channel].value, dcts_meas[channel].unit_cyr);
-        LCD_set_xy(align_text_right(string,Font_7x10),31-21*i);
-        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-        temp = temp->Next;
-    }
-
-    sprintf(string, "<назад");
-    LCD_set_xy(0,0);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,0,42,11);
-
-}*/
 
 /*static void calib_print (uint8_t start_channel){
     char string[100];
@@ -1510,6 +1574,17 @@ void uart_task(void const * argument){
     }
 }
 
+#define control_task_period 5
+void control_task(void const * argument){
+    (void)argument;
+    channels_init();
+    //uint16_t tick = 0;
+    uint32_t last_wake_time = osKernelSysTick();
+    while(1){
+        osDelayUntil(&last_wake_time, control_task_period);
+    }
+}
+
 uint16_t uint16_pow(uint16_t x, uint16_t pow){
     uint16_t result = 1;
     while(pow){
@@ -1814,7 +1889,7 @@ static u8 read_bkp(u8 bkp_num){
 }*/
 
 
-static void do_init(void){
+static void channels_init(void){
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -1822,10 +1897,17 @@ static void do_init(void){
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    for(u8 i = 0;i < 6; i++){
+    for(u8 i = 0;i < DO_NUM; i++){
         GPIO_InitStruct.Pin = do_ch[i].pin;
         HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
         HAL_GPIO_Init (do_ch[i].port, &GPIO_InitStruct);
+    }
+    for(u8 i = 0; i < IN_CHANNELS_NUM; i++){
+        switch (input_ch[i]){
+        case CH_MODE_ADC:
+            break;
+            case CH_MODE_
+        }
     }
 }
 

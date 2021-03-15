@@ -56,7 +56,7 @@ int adc_init (void){
     }
 
     sConfigInjected.InjectedNbrOfConversion = 4;
-    sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_7CYCLES_5;
+    sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_239CYCLES_5;
     sConfigInjected.ExternalTrigInjecConv = ADC_INJECTED_SOFTWARE_START;
     sConfigInjected.AutoInjectedConv = ENABLE;
     sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;

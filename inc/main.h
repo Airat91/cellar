@@ -171,6 +171,7 @@ typedef enum{
      uint8_t digit;
      uint8_t digit_max;
      edit_val_type type;
+     uint8_t select_width;
  }edit_val_t;
 
 typedef union{
@@ -186,9 +187,28 @@ typedef union{
 }saved_to_flash_t;
 
 typedef struct{
-     GPIO_TypeDef * port;
-     uint16_t pin;
+    GPIO_TypeDef * port;
+    uint16_t pin;
 }ch_t;
+
+typedef enum{
+    CH_MODE_NONE = 0,
+    CH_MODE_ADC,
+    CH_MODE_DI,
+    CH_MODE_DO,
+    CH_MODE_AM3202,
+    CH_MODE_PWM,
+}ch_mode_t;
+
+typedef struct{
+    ch_mode_t mode;
+    const GPIO_TypeDef * port;
+    const uint16_t pin;
+    const ADC_TypeDef * adc_num;
+    const uint32_t adc_channel;
+    const TIM_HandleTypeDef * pwm_tim;
+    const uint32_t pwm_channel;
+}in_channel_t;
 
 void _Error_Handler(char *, int);
 extern uint32_t us_cnt_H;
@@ -197,7 +217,7 @@ extern edit_val_t edit_val;
 extern RTC_HandleTypeDef hrtc;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
-extern osThreadId defaultTaskHandle;
+extern osThreadId rtcTaskHandle;
 extern osThreadId buttonsTaskHandle;
 extern osThreadId displayTaskHandle;
 extern osThreadId menuTaskHandle;
@@ -207,18 +227,20 @@ extern osThreadId am2302TaskHandle;
 extern osThreadId navigationtTaskHandle;
 extern osThreadId uartTaskHandle;
 extern saved_to_flash_t config;
-extern ch_t do_ch[];
-extern ch_t ch[];
+extern const ch_t do_ch[];
+extern const ch_t ch[];
+extern in_channel_t input_ch[];
 
 void display_task(void const * argument);
 void am2302_task(void const * argument);
-void default_task(void const * argument);
+void rtc_task(void const * argument);
 void navigation_task(void const * argument);
 void uart_task(void const * argument);
-uint32_t uint32_pow(uint16_t x, uint8_t pow);
+void control_task(void const * argument);
 
 uint32_t us_tim_get_value(void);
 void us_tim_delay(uint32_t us);
+uint32_t uint32_pow(uint16_t x, uint8_t pow);
 uint16_t uint16_pow(uint16_t x, uint16_t pow);
 
 
