@@ -1970,6 +1970,26 @@ void am2302_task (void const * argument){
         }
         taskEXIT_CRITICAL();
 
+        if((dcts_meas[HUM_IN_1].valid)&&(dcts_meas[HUM_IN_2].valid)){
+            dcts_meas[HUM_IN_AVG].value = (dcts_meas[HUM_IN_1].value + dcts_meas[HUM_IN_2].value)/2.0f;
+            dcts_meas[TMPR_IN_AVG].value = (dcts_meas[TMPR_IN_1].value + dcts_meas[TMPR_IN_2].value)/2.0f;
+            dcts_meas[HUM_IN_AVG].valid = TRUE;
+            dcts_meas[TMPR_IN_AVG].valid = TRUE;
+        }else if(dcts_meas[HUM_IN_1].valid){
+            dcts_meas[HUM_IN_AVG].value = dcts_meas[HUM_IN_1].value;
+            dcts_meas[TMPR_IN_AVG].value = dcts_meas[TMPR_IN_1].value;
+            dcts_meas[HUM_IN_AVG].valid = TRUE;
+            dcts_meas[TMPR_IN_AVG].valid = TRUE;
+        }else if(dcts_meas[HUM_IN_2].valid){
+            dcts_meas[HUM_IN_AVG].value = dcts_meas[HUM_IN_2].value;
+            dcts_meas[TMPR_IN_AVG].value = dcts_meas[TMPR_IN_2].value;
+            dcts_meas[HUM_IN_AVG].valid = TRUE;
+            dcts_meas[TMPR_IN_AVG].valid = TRUE;
+        }else{
+            dcts_meas[HUM_IN_AVG].valid = FALSE;
+            dcts_meas[TMPR_IN_AVG].valid = FALSE;
+        }
+
         osDelayUntil(&last_wake_time, am2302_task_period);
     }
 }
@@ -2191,6 +2211,18 @@ static void save_params(void){
     static menuItem* current_menu;
     current_menu = selectedMenuItem;
     menuChange(&save_changes);
+    // store dcts_act
+    for(uint8_t i = 0; i < ACT_NUM; i++){
+        config.params.act_set[i] = dcts_act[i].set_value;
+        config.params.act_enable[i] = dcts_act[i].state.control;
+    }
+
+    // store dcts_rele
+    for(uint8_t i = 0; i < RELE_NUM; i++){
+        uint8_t temp = dcts_rele[i].state.control_by_act;
+        temp |= dcts_rele[i].state.control << 1;
+        config.params.rele[i] = temp;
+    }
 
     int area_cnt = find_free_area();
     if(area_cnt < 0){
@@ -2232,12 +2264,22 @@ static void restore_params(void){
             config.word[i] = *addr;
             addr++;
         }
+
+        // restore dcts_act
+        for(uint8_t i = 0; i < ACT_NUM; i++){
+            dcts_act[i].set_value = config.params.act_set[i];
+            dcts_act[i].state.control = (uint8_t)config.params.act_enable[i];
+        }
+
+        // restore dcts_rele
+        for(uint8_t i = 0; i < RELE_NUM; i++){
+            dcts_rele[i].state.control_by_act = (uint8_t)(config.params.rele[i] & 0x01);
+            dcts_rele[i].state.control = (uint8_t)((config.params.rele[i] & 0x0002)>>1);
+        }
     }else{
         //init default values if saved params not found
         config.params.mdb_address = dcts.dcts_address;
-        config.params.mdb_bitrate = BITRATE_56000;
-        //memcpy(config.params.lvl_calib_table, def_lvl_calib_table, 6);
-        //memcpy(config.params.tmpr_calib_table, def_tmpr_calib_table, 11);
+        config.params.mdb_bitrate = BITRATE_115200;
     }
     for(bitrate_array_pointer = 0; bitrate_array_pointer < 14; bitrate_array_pointer++){
         if(bitrate_array[bitrate_array_pointer] == config.params.mdb_bitrate){

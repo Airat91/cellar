@@ -85,7 +85,7 @@
 #define MEAS_NUM 20
 #define ACT_NUM 4
 #define RELE_NUM 6
-#define SAVED_PARAMS_SIZE 21
+#define SAVED_PARAMS_SIZE 22
 
 #if(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)
     #error(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)
@@ -181,12 +181,13 @@ typedef enum{
 
 typedef union{
     struct{
-        uint16_t lvl_calib_table[6];
-        uint16_t tmpr_calib_table[11];
         uint16_t mdb_address;
         uint16_t mdb_bitrate;
         uint16_t lcd_backlight_lvl;
         uint16_t lcd_backlight_time;
+        uint16_t act_enable[4];
+        float    act_set[4];
+        uint16_t rele[6];
     }params;
     uint16_t word[SAVED_PARAMS_SIZE];
 }saved_to_flash_t;

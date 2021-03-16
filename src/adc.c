@@ -201,7 +201,7 @@ float adc_tmpr_calc(float adc){
     float tmpr = 0.0f;
     float a = 1.0f;
     float b = 0.0f;
-    for(uint8_t i = 0; i < 10; i++){
+    /*for(uint8_t i = 0; i < 10; i++){
         if((adc <= config.params.tmpr_calib_table[i])&&(adc > config.params.tmpr_calib_table[i+1])){
             a = 10.0f/(config.params.tmpr_calib_table[i+1]-config.params.tmpr_calib_table[i]);
             b = 10.0f*i - a*config.params.tmpr_calib_table[i];
@@ -214,7 +214,7 @@ float adc_tmpr_calc(float adc){
     if(adc <= config.params.tmpr_calib_table[10]){
         a = 10.0f/(config.params.tmpr_calib_table[10]-config.params.tmpr_calib_table[9]);
         b = 100.0f - a*config.params.tmpr_calib_table[10];
-    }
+    }*/
     tmpr = a*adc + b;
     return tmpr;
 }
@@ -223,7 +223,7 @@ float adc_lvl_calc(float adc){
     float tmpr = 0.0f;
     float a = 1.0f;
     float b = 0.0f;
-    for(uint8_t i = 0; i < 5; i++){
+    /*for(uint8_t i = 0; i < 5; i++){
         if((adc >= config.params.lvl_calib_table[i])&&(adc < config.params.lvl_calib_table[i+1])){
             a = 20.0f/(config.params.lvl_calib_table[i+1]-config.params.lvl_calib_table[i]);
             b = 20.0f*i - a*config.params.lvl_calib_table[i];
@@ -236,7 +236,7 @@ float adc_lvl_calc(float adc){
     if(adc >= config.params.lvl_calib_table[5]){
         a = 20.0f/(config.params.lvl_calib_table[5]-config.params.lvl_calib_table[4]);
         b = 100.0f - a*config.params.lvl_calib_table[5];
-    }
+    }*/
     tmpr = a*adc + b;
     return tmpr;
 }
