@@ -37,7 +37,6 @@
 #include "cmsis_os.h"
 #include "dcts.h"
 #include "pin_map.h"
-#include "control.h"
 #include "main.h"
 #include "uart.h"
 #include "LCD.h"

@@ -144,6 +144,7 @@ typedef enum{
      VAL_INT16,
      VAL_UINT32,
      VAL_INT32,
+     VAL_FLOAT,
  }edit_val_type;
 
  typedef union{
@@ -153,6 +154,7 @@ typedef enum{
      int16_t * p_int16;
      uint32_t * p_uint32;
      int32_t * p_int32;
+     float * p_float;
  }edit_val_p_type_t;
 
  typedef union{
@@ -162,16 +164,18 @@ typedef enum{
      int16_t int16;
      uint32_t uint32;
      int32_t int32;
+     float vfloat;
  }edit_val_type_t;
 
  typedef struct{
      edit_val_p_type_t p_val;
      edit_val_type_t val_min;
      edit_val_type_t val_max;
-     uint8_t digit;
-     uint8_t digit_max;
+     int8_t digit;
+     int8_t digit_max;
      edit_val_type type;
      uint8_t select_width;
+     uint8_t select_shift;
  }edit_val_t;
 
 typedef union{
@@ -202,12 +206,12 @@ typedef enum{
 
 typedef struct{
     ch_mode_t mode;
-    const GPIO_TypeDef * port;
-    const uint16_t pin;
-    const ADC_TypeDef * adc_num;
-    const uint32_t adc_channel;
-    const TIM_HandleTypeDef * pwm_tim;
-    const uint32_t pwm_channel;
+    GPIO_TypeDef * port;
+    uint16_t pin;
+    ADC_TypeDef * adc_num;
+    uint32_t adc_channel;
+    TIM_HandleTypeDef * pwm_tim;
+    uint32_t pwm_channel;
 }in_channel_t;
 
 void _Error_Handler(char *, int);

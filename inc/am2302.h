@@ -1,5 +1,5 @@
 // Library for AM2302
-// Ver_2.0
+// Ver_2.2
 
 /*========== LIBRARY DESCRIPTION ==========
 - Library use STM32F3xx_HAL_Driver 
@@ -34,11 +34,14 @@ typedef struct {
 //========== VARIABLES ==========
 
 volatile extern uint8_t am2302_timeout;
+extern const am2302_pin_t am2302_pin[];
 
 //========== FUNCTIONS PROTOTYPES ==========
 
 int am2302_init (void);
 void am2303_deinit(void);
 am2302_data_t am2302_get (uint8_t channel);
+void am2302_send(am2302_data_t data, uint8_t channel);
+am2302_data_t am2302_get_rtc(uint8_t channel);
 
 #endif /* am2302_H_ */

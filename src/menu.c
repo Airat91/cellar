@@ -124,5 +124,7 @@ void menu_init (void){
 void menuChange(menuItem* NewMenu){
     if ((NewMenu != &NULL_ENTRY)&&(NewMenu != &EDITED_VAL)){
         selectedMenuItem = NewMenu;
+    }else if(NewMenu == &EDITED_VAL){
+        navigation_style = DIGIT_EDIT;
     }
 }

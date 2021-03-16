@@ -73,7 +73,7 @@
 #define DEFAULT_TASK_PERIOD 100
 #define RELEASE 0
 #define DO_NUM 6
-#define IN_CAHHEL_NUM 8
+#define IN_CHANNEL_NUM 8
 
 /* Private variables ---------------------------------------------------------*/
 RTC_HandleTypeDef hrtc;
@@ -111,7 +111,8 @@ static void info_print (void);
 static void calib_print(uint8_t start_channel);
 static void mdb_print(void);
 static void display_print(void);*/
-static void get_param_value(char* string, menu_page_t page);
+static int get_param_value(char* string, menu_page_t page);
+static void set_edit_value(menu_page_t page);
 static void print_back(void);
 static void print_enter_right(void);
 static void print_enter_ok(void);
@@ -153,6 +154,14 @@ static const char off_on_descr[2][10] = {
 static const char manual_auto_descr[2][10] = {
     "Ручной",
     "Авто",
+};
+static const char ch_mode_descr[6][10] = {
+    "Неактивен",
+    "Аналоговый",
+    "Дис. вход",
+    "Дис. выход",
+    "AM2302",
+    "ШИМ-выход",
 };
 
 in_channel_t input_ch[8] = {
@@ -217,9 +226,9 @@ int main(void){
     osThreadDef(buttons_task, buttons_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     buttonsTaskHandle = osThreadCreate(osThread(buttons_task), NULL);
 
-    /*osThreadDef(am2302_task, am2302_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
+    osThreadDef(am2302_task, am2302_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     am2302TaskHandle = osThreadCreate(osThread(am2302_task), NULL);
-*/
+
     osThreadDef(navigation_task, navigation_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     navigationtTaskHandle = osThreadCreate(osThread(navigation_task), NULL);
 
@@ -770,15 +779,19 @@ void navigation_task (void const * argument){
                     edit_val.digit--;
                 }
             }
-            if(button_clamp(BUTTON_RIGHT,BUTTON_PRESS_TIME)){
+            if(button_click(BUTTON_OK,BUTTON_CLICK_TIME)){
                 //out from digit_edit mode
-                navigation_style = MENU_NAVIGATION;
-                timeout = 0;
-                while((pressed_time[BUTTON_OK].last_state == BUTTON_PRESSED)&&(timeout < BUTTON_PRESS_TIMEOUT)){
-                    osDelay(1);
-                    timeout++;
+                switch (selectedMenuItem->Page){
+                case TIME_HOUR:
+                case TIME_MIN:
+                case TIME_SEC:
+                case DATE_DAY:
+                case DATE_MONTH:
+                case DATE_YEAR:
+                    dcts.dcts_rtc.state = RTC_STATE_SET;
+                    break;
                 }
-                pressed_time[BUTTON_OK].pressed = 0;
+                navigation_style = MENU_NAVIGATION;
             }
             break;
         }
@@ -932,6 +945,9 @@ static void menu_page_print(u8 tick){
 static void value_print(u8 tick){
     char string[50];
     print_header();
+    int prev = 0;
+    int cur = 0;
+    int next = 0;
 
     menuItem* temp = selectedMenuItem->Parent;
     if(temp->Child_num >= 3){
@@ -941,18 +957,26 @@ static void value_print(u8 tick){
         LCD_set_xy(2,39);
         LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
         LCD_fill_area(80,39,127,49,LCD_COLOR_WHITE);
-        get_param_value(string, temp->Page);
+        prev = get_param_value(string, temp->Page);
         LCD_set_xy(align_text_right(string,Font_7x10),39);
         LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+        if(prev == -2){
+            // invalid value
+            LCD_fill_area(84,45,127,45,LCD_COLOR_BLACK);
+        }
     }
 
     //print selected name
     sprintf(string, selectedMenuItem->Text);
     LCD_set_xy(2,26);
     LCD_print_ticker(string,&Font_7x10,LCD_COLOR_BLACK,11,tick);
-    get_param_value(string, selectedMenuItem->Page);
+    cur = get_param_value(string, selectedMenuItem->Page);
     LCD_set_xy(align_text_right(string,Font_7x10),26);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    if(cur == -2){
+        // invalid value
+        LCD_fill_area(84,32,127,32,LCD_COLOR_BLACK);
+    }
 
     LCD_invert_area(0,26,82,38);
     LCD_invert_area(1,27,81,37);
@@ -963,17 +987,38 @@ static void value_print(u8 tick){
     LCD_set_xy(2,14);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_fill_area(80,14,127,24,LCD_COLOR_WHITE);
-    get_param_value(string, temp->Page);
+    next = get_param_value(string, temp->Page);
     LCD_set_xy(align_text_right(string,Font_7x10),14);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    if(next == -2){
+        // invalid value
+        LCD_fill_area(84,20,127,20,LCD_COLOR_BLACK);
+    }
 
     print_back();
-    if(selectedMenuItem->Child == &EDITED_VAL){
-        print_change();
+
+    if(navigation_style == MENU_NAVIGATION){
+        set_edit_value(selectedMenuItem->Page);
+        if((selectedMenuItem->Child == &EDITED_VAL)&&(cur != -3)){
+            print_change();
+        }
+    }else if(navigation_style == DIGIT_EDIT){
+        print_enter_ok();
+        LCD_invert_area(127-(u8)(edit_val.digit+edit_val.select_shift+1)*edit_val.select_width,26,127-(u8)(edit_val.digit+edit_val.select_shift)*edit_val.select_width,38);
     }
 }
 
-static void get_param_value(char* string, menu_page_t page){
+/**
+ * @brief get_param_value
+ * @param string - buffer for set value
+ * @param page -
+ * @return  0 - haven't additional data,\n
+ *          -1 - valid value,\n
+ *          -2 - invalid value,\n
+ *          -3 - don't change,
+ */
+static int get_param_value(char* string, menu_page_t page){
+    int result = 0;
     switch (page) {
     case MEAS_CH_0:
     case MEAS_CH_1:
@@ -996,6 +1041,11 @@ static void get_param_value(char* string, menu_page_t page){
     case MEAS_CH_18:
     case MEAS_CH_19:
         sprintf(string, "%.1f", (double)dcts_meas[(uint8_t)(page - MEAS_CH_0)].value);//, dcts_meas[(uint8_t)(page - MEAS_CH_0)].unit_cyr);
+        if(dcts_meas[(uint8_t)(page - MEAS_CH_0)].valid == 1){
+            result = -1;
+        }else{
+            result = -2;
+        }
         break;
 
     case ACT_EN_0:
@@ -1035,6 +1085,9 @@ static void get_param_value(char* string, menu_page_t page){
     case RELE_CONTROL_4:
     case RELE_CONTROL_5:
         sprintf(string, "%s", off_on_descr[dcts_rele[(uint8_t)(page - RELE_CONTROL_0)/3].state.control]);
+        if(dcts_rele[(uint8_t)(page - RELE_CONTROL_0)/3].state.control_by_act == 1){
+            result = -3;
+        }
         break;
 
     case MDB_ADDR:
@@ -1064,26 +1117,319 @@ static void get_param_value(char* string, menu_page_t page){
         break;
 
     case TIME_HOUR:
-        sprintf(string, "%d", dcts.dcts_rtc.hour);
+        sprintf(string, "%02d", dcts.dcts_rtc.hour);
         break;
     case TIME_MIN:
-        sprintf(string, "%d", dcts.dcts_rtc.minute);
+        sprintf(string, "%02d", dcts.dcts_rtc.minute);
         break;
     case TIME_SEC:
-        sprintf(string, "%d", dcts.dcts_rtc.second);
+        sprintf(string, "%02d", dcts.dcts_rtc.second);
         break;
     case DATE_DAY:
-        sprintf(string, "%d", dcts.dcts_rtc.day);
+        sprintf(string, "%02d", dcts.dcts_rtc.day);
         break;
     case DATE_MONTH:
-        sprintf(string, "%d", dcts.dcts_rtc.month);
+        sprintf(string, "%02d", dcts.dcts_rtc.month);
         break;
     case DATE_YEAR:
-        sprintf(string, "%d", dcts.dcts_rtc.year);
+        sprintf(string, "%04d", dcts.dcts_rtc.year);
+        break;
+    }
+    return result;
+}
+
+static void set_edit_value(menu_page_t page){
+    switch(page){
+    case ACT_EN_0:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_act[VALVE_IN].state.control;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*5;
+        break;
+    case ACT_EN_1:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_act[VALVE_OUT].state.control;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*5;
+        break;
+    case ACT_EN_2:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_act[TMPR_IN].state.control;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*5;
+        break;
+    case ACT_EN_3:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_act[HUM_IN].state.control;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*5;
+        break;
+    case ACT_SET_0:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[VALVE_IN].set_value;
+        edit_val.select_shift = 3;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case ACT_SET_1:
+        break;
+    case ACT_SET_2:
+        break;
+    case ACT_SET_3:
+        break;
+    case RELE_AUTO_MAN_0:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_rele[FAN_IN].state.control_by_act;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*6;
+        break;
+    case RELE_AUTO_MAN_1:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_rele[HEATER].state.control_by_act;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*6;
+        break;
+    case RELE_AUTO_MAN_2:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_rele[FREEZER].state.control_by_act;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*6;
+        break;
+    case RELE_AUTO_MAN_3:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_rele[FAN_CONVECTION].state.control_by_act;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*6;
+        break;
+    case RELE_AUTO_MAN_4:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_rele[WTR_PUMP].state.control_by_act;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*6;
+        break;
+    case RELE_AUTO_MAN_5:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_rele[RESERV].state.control_by_act;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*6;
+        break;
+    case RELE_CONTROL_0:
+        if(dcts_rele[FAN_IN].state.control_by_act == 0){
+            edit_val.type = VAL_UINT8;
+            edit_val.digit_max = 0;
+            edit_val.digit = 0;
+            edit_val.val_min.uint8 = 0;
+            edit_val.val_max.uint8 = 1;
+            edit_val.p_val.p_uint8 = &dcts_rele[FAN_IN].state.control;
+            edit_val.select_shift = 0;
+            edit_val.select_width = Font_7x10.FontWidth*5;
+        }
+        break;
+    case RELE_CONTROL_1:
+        if(dcts_rele[HEATER].state.control_by_act == 0){
+            edit_val.type = VAL_UINT8;
+            edit_val.digit_max = 0;
+            edit_val.digit = 0;
+            edit_val.val_min.uint8 = 0;
+            edit_val.val_max.uint8 = 1;
+            edit_val.p_val.p_uint8 = &dcts_rele[HEATER].state.control;
+            edit_val.select_shift = 0;
+            edit_val.select_width = Font_7x10.FontWidth*5;
+        }
+        break;
+    case RELE_CONTROL_2:
+        if(dcts_rele[FREEZER].state.control_by_act == 0){
+            edit_val.type = VAL_UINT8;
+            edit_val.digit_max = 0;
+            edit_val.digit = 0;
+            edit_val.val_min.uint8 = 0;
+            edit_val.val_max.uint8 = 1;
+            edit_val.p_val.p_uint8 = &dcts_rele[FREEZER].state.control;
+            edit_val.select_shift = 0;
+            edit_val.select_width = Font_7x10.FontWidth*5;
+        }
+        break;
+    case RELE_CONTROL_3:
+        if(dcts_rele[FAN_CONVECTION].state.control_by_act == 0){
+            edit_val.type = VAL_UINT8;
+            edit_val.digit_max = 0;
+            edit_val.digit = 0;
+            edit_val.val_min.uint8 = 0;
+            edit_val.val_max.uint8 = 1;
+            edit_val.p_val.p_uint8 = &dcts_rele[FAN_CONVECTION].state.control;
+            edit_val.select_shift = 0;
+            edit_val.select_width = Font_7x10.FontWidth*5;
+        }
+        break;
+    case RELE_CONTROL_4:
+        if(dcts_rele[WTR_PUMP].state.control_by_act == 0){
+            edit_val.type = VAL_UINT8;
+            edit_val.digit_max = 0;
+            edit_val.digit = 0;
+            edit_val.val_min.uint8 = 0;
+            edit_val.val_max.uint8 = 1;
+            edit_val.p_val.p_uint8 = &dcts_rele[WTR_PUMP].state.control;
+            edit_val.select_shift = 0;
+            edit_val.select_width = Font_7x10.FontWidth*5;
+        }
+        break;
+    case RELE_CONTROL_5:
+        if(dcts_rele[RESERV].state.control_by_act == 0){
+            edit_val.type = VAL_UINT8;
+            edit_val.digit_max = 0;
+            edit_val.digit = 0;
+            edit_val.val_min.uint8 = 0;
+            edit_val.val_max.uint8 = 1;
+            edit_val.p_val.p_uint8 = &dcts_rele[RESERV].state.control;
+            edit_val.select_shift = 0;
+            edit_val.select_width = Font_7x10.FontWidth*5;
+        }
+        break;
+    case MDB_ADDR:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 2;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 255;
+        edit_val.p_val.p_uint8 = &dcts.dcts_address;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case MDB_BITRATE:
+        edit_val.type = VAL_UINT16;
+        edit_val.digit_max = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint16 = 0;
+        edit_val.val_max.uint16 = 11;
+        edit_val.p_val.p_uint16 = &bitrate_array_pointer;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*6;
+        break;
+    case LIGHT_LVL:
+        edit_val.type = VAL_UINT16;
+        edit_val.digit_max = 1;
+        edit_val.digit = 0;
+        edit_val.val_min.uint16 = 0;
+        edit_val.val_max.uint16 = 10;
+        edit_val.p_val.p_uint16 = &LCD.backlight_lvl;
+        edit_val.select_shift = 2;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case AUTO_OFF:
+        edit_val.type = VAL_UINT16;
+        edit_val.digit_max = 1;
+        edit_val.digit = 0;
+        edit_val.val_min.uint16 = 0;
+        edit_val.val_max.uint16 = 10;
+        edit_val.p_val.p_uint16 = &LCD.auto_off;
+        edit_val.select_shift = 2;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case TIME_HOUR:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 1;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 23;
+        edit_val.p_val.p_uint8 = &dcts.dcts_rtc.hour;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case TIME_MIN:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 1;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 59;
+        edit_val.p_val.p_uint8 = &dcts.dcts_rtc.minute;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case TIME_SEC:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 1;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 59;
+        edit_val.p_val.p_uint8 = &dcts.dcts_rtc.second;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case DATE_DAY:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 1;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 1;
+        edit_val.val_max.uint8 = 31;
+        edit_val.p_val.p_uint8 = &dcts.dcts_rtc.day;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case DATE_MONTH:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 1;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 1;
+        edit_val.val_max.uint8 = 12;
+        edit_val.p_val.p_uint8 = &dcts.dcts_rtc.month;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case DATE_YEAR:
+        edit_val.type = VAL_UINT16;
+        edit_val.digit_max = 3;
+        edit_val.digit = 0;
+        edit_val.val_min.uint16 = 2000;
+        edit_val.val_max.uint16 = 3000;
+        edit_val.p_val.p_uint16 = &dcts.dcts_rtc.year;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth;
         break;
     }
 }
-
 
 
 static void info_print (void){
@@ -1480,43 +1826,75 @@ void am2302_task (void const * argument){
     (void)argument;
     uint32_t last_wake_time = osKernelSysTick();
     am2302_init();
-    am2302_data_t am2302 = {0};
+    am2302_data_t ch_2 = {0};
+    uint8_t ch_2_lost_con_cnt = 0;
+    uint32_t ch_2_recieved = 0;
+    uint32_t ch_2_lost = 0;
+    am2302_data_t ch_3 = {0};
+    uint8_t ch_3_lost_con_cnt = 0;
+    uint32_t ch_3_recieved = 0;
+    uint32_t ch_3_lost = 0;
+    am2302_data_t ch_4 = {0};
+    uint8_t ch_4_lost_con_cnt = 0;
+    uint32_t ch_4_recieved = 0;
+    uint32_t ch_4_lost = 0;
     while(1){
-        /*am2302 = am2302_get(2);
+        ch_2 = am2302_get(0);
         taskENTER_CRITICAL();
-        if(am2302.error == 1){
-            dcts_meas[PREDBANNIK_HUM].valid = FALSE;
-            dcts_meas[PREDBANNIK_TMPR].valid = FALSE;
+        if(ch_2.error == 1){
+            ch_2_lost++;
+            ch_2_lost_con_cnt++;
+            if(ch_2_lost_con_cnt > 2){
+                dcts_meas[HUM_OUT].valid = FALSE;
+                dcts_meas[TMPR_OUT].valid = FALSE;
+            }
         }else{
-            dcts_meas[PREDBANNIK_HUM].value = (float)am2302.hum/10;
-            dcts_meas[PREDBANNIK_HUM].valid = TRUE;
-            dcts_meas[PREDBANNIK_TMPR].value = (float)am2302.tmpr/10;
-            dcts_meas[PREDBANNIK_TMPR].valid = TRUE;
+            ch_2_recieved++;
+            ch_2_lost_con_cnt = 0;
+            dcts_meas[HUM_OUT].value = (float)ch_2.hum/10;
+            dcts_meas[HUM_OUT].valid = TRUE;
+            dcts_meas[TMPR_OUT].value = (float)ch_2.tmpr/10;
+            dcts_meas[TMPR_OUT].valid = TRUE;
         }
         taskEXIT_CRITICAL();
 
-        am2302 = am2302_get(1);
+        ch_3 = am2302_get(1);
         taskENTER_CRITICAL();
-        if(am2302.error == 1){
-            dcts_meas[MOYKA_HUM].valid = FALSE;
-            dcts_meas[MOYKA_TMPR].valid = FALSE;
+        if(ch_3.error == 1){
+            ch_3_lost++;
+            ch_3_lost_con_cnt++;
+            if(ch_3_lost_con_cnt > 2){
+                dcts_meas[HUM_IN_1].valid = FALSE;
+                dcts_meas[TMPR_IN_1].valid = FALSE;
+            }
         }else{
-            dcts_meas[MOYKA_HUM].value = (float)am2302.hum/10;
-            dcts_meas[MOYKA_HUM].valid = TRUE;
-            dcts_meas[MOYKA_TMPR].value = (float)am2302.tmpr/10;
-            dcts_meas[MOYKA_TMPR].valid = TRUE;
+            ch_3_recieved++;
+            ch_3_lost_con_cnt = 0;
+            dcts_meas[HUM_IN_1].value = (float)ch_3.hum/10;
+            dcts_meas[HUM_IN_1].valid = TRUE;
+            dcts_meas[TMPR_IN_1].value = (float)ch_3.tmpr/10;
+            dcts_meas[TMPR_IN_1].valid = TRUE;
         }
         taskEXIT_CRITICAL();
 
-        am2302 = am2302_get(0);
+        ch_4 = am2302_get(2);
         taskENTER_CRITICAL();
-        if(am2302.error == 1){
-            dcts_meas[PARILKA_TMPR].valid = FALSE;
+        if(ch_4.error == 1){
+            ch_4_lost++;
+            ch_4_lost_con_cnt++;
+            if(ch_4_lost_con_cnt > 2){
+                dcts_meas[HUM_IN_2].valid = FALSE;
+                dcts_meas[TMPR_IN_2].valid = FALSE;
+            }
         }else{
-            dcts_meas[PARILKA_TMPR].value = (float)am2302.tmpr/10;
-            dcts_meas[PARILKA_TMPR].valid = TRUE;
+            ch_4_recieved++;
+            ch_4_lost_con_cnt = 0;
+            dcts_meas[HUM_IN_2].value = (float)ch_4.hum/10;
+            dcts_meas[HUM_IN_2].valid = TRUE;
+            dcts_meas[TMPR_IN_2].value = (float)ch_4.tmpr/10;
+            dcts_meas[TMPR_IN_2].valid = TRUE;
         }
-        taskEXIT_CRITICAL();*/
+        taskEXIT_CRITICAL();
 
         osDelayUntil(&last_wake_time, am2302_task_period);
     }
@@ -1578,9 +1956,23 @@ void uart_task(void const * argument){
 void control_task(void const * argument){
     (void)argument;
     channels_init();
-    //uint16_t tick = 0;
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
+
+        // control DO channels
+        for(u8 i = 0; i < DO_NUM; i ++){
+            if(dcts_rele[i].state.control == 1){
+                if(dcts_rele[i].state.status == 0){
+                    HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_RESET);
+                    dcts_rele[i].state.status = 1;
+                }
+            }else{
+                if(dcts_rele[i].state.status == 1){
+                    HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
+                    dcts_rele[i].state.status = 0;
+                }
+            }
+        }
         osDelayUntil(&last_wake_time, control_task_period);
     }
 }
@@ -1902,11 +2294,40 @@ static void channels_init(void){
         HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
         HAL_GPIO_Init (do_ch[i].port, &GPIO_InitStruct);
     }
-    for(u8 i = 0; i < IN_CHANNELS_NUM; i++){
-        switch (input_ch[i]){
+    for(u8 i = 0; i < IN_CHANNEL_NUM; i++){
+        switch (input_ch[i].mode){
         case CH_MODE_ADC:
+            GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+            GPIO_InitStruct.Pull = GPIO_NOPULL;
+            GPIO_InitStruct.Pin = input_ch[i].pin;
+            HAL_GPIO_Init(input_ch[i].port, &GPIO_InitStruct);
             break;
-            case CH_MODE_
+        case CH_MODE_DI:
+            GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+            GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+            GPIO_InitStruct.Pin = input_ch[i].pin;
+            HAL_GPIO_Init(input_ch[i].port, &GPIO_InitStruct);
+            break;
+        case CH_MODE_DO:
+            GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+            GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+            GPIO_InitStruct.Pin = input_ch[i].pin;
+            HAL_GPIO_Init(input_ch[i].port, &GPIO_InitStruct);
+            break;
+        case CH_MODE_AM3202:
+            GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+            GPIO_InitStruct.Pull = GPIO_PULLUP;
+            GPIO_InitStruct.Pin = input_ch[i].pin;
+            HAL_GPIO_Init(input_ch[i].port, &GPIO_InitStruct);
+            break;
+        case CH_MODE_PWM:
+            GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+            GPIO_InitStruct.Pull = GPIO_PULLUP;
+            GPIO_InitStruct.Pin = input_ch[i].pin;
+            HAL_GPIO_Init(input_ch[i].port, &GPIO_InitStruct);
+            break;
+        default:
+            ;
         }
     }
 }
