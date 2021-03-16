@@ -662,7 +662,7 @@ void navigation_task (void const * argument){
                 switch(edit_val.type){
                 case VAL_INT8:
                     if(*edit_val.p_val.p_int8 < edit_val.val_max.int8){
-                        *edit_val.p_val.p_int8 += (int8_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_int8 += (int8_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_int8 > edit_val.val_max.int8)||(*edit_val.p_val.p_int8 < edit_val.val_min.int8)){ //if out of range
                         *edit_val.p_val.p_int8 = edit_val.val_max.int8;
@@ -670,7 +670,7 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_UINT8:
                     if(*edit_val.p_val.p_uint8 < edit_val.val_max.uint8){
-                        *edit_val.p_val.p_uint8 += (uint8_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_uint8 += (uint8_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_uint8 > edit_val.val_max.uint8)||(*edit_val.p_val.p_uint8 < edit_val.val_min.uint8)){ //if out of range
                         *edit_val.p_val.p_uint8 = edit_val.val_max.uint8;
@@ -678,7 +678,7 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_INT16:
                     if(*edit_val.p_val.p_int16 < edit_val.val_max.int16){
-                        *edit_val.p_val.p_int16 += (int16_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_int16 += (int16_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_int16 > edit_val.val_max.int16)||(*edit_val.p_val.p_int16 < edit_val.val_min.int16)){ //if out of range
                         *edit_val.p_val.p_int16 = edit_val.val_max.int16;
@@ -686,7 +686,7 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_UINT16:
                     if(*edit_val.p_val.p_uint16 < edit_val.val_max.uint16){
-                        *edit_val.p_val.p_uint16 += (uint16_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_uint16 += (uint16_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_uint16 > edit_val.val_max.uint16)||(*edit_val.p_val.p_uint16 < edit_val.val_min.uint16)){ //if out of range
                         *edit_val.p_val.p_uint16 = edit_val.val_max.uint16;
@@ -694,7 +694,7 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_INT32:
                     if(*edit_val.p_val.p_int32 < edit_val.val_max.int32){
-                        *edit_val.p_val.p_int32 += (int32_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_int32 += (int32_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_int32 > edit_val.val_max.int32)||(*edit_val.p_val.p_int32 < edit_val.val_min.int32)){ //if out of range
                         *edit_val.p_val.p_int32 = edit_val.val_max.int32;
@@ -702,10 +702,18 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_UINT32:
                     if(*edit_val.p_val.p_uint32 < edit_val.val_max.uint32){
-                        *edit_val.p_val.p_uint32 += (uint32_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_uint32 += (uint32_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_uint32 > edit_val.val_max.uint32)||(*edit_val.p_val.p_uint32 < edit_val.val_min.uint32)){ //if out of range
                         *edit_val.p_val.p_uint32 = edit_val.val_max.uint32;
+                    }
+                    break;
+                case VAL_FLOAT:
+                    if(*edit_val.p_val.p_float < edit_val.val_max.vfloat){
+                        *edit_val.p_val.p_float += float_pow(10.0, edit_val.digit);
+                    }
+                    if((*edit_val.p_val.p_float > edit_val.val_max.vfloat)||(*edit_val.p_val.p_float < edit_val.val_min.vfloat)){ //if out of range
+                        *edit_val.p_val.p_float = edit_val.val_max.vfloat;
                     }
                     break;
                 default:
@@ -717,7 +725,7 @@ void navigation_task (void const * argument){
                 switch(edit_val.type){
                 case VAL_INT8:
                     if(*edit_val.p_val.p_int8 > edit_val.val_min.int8){
-                        *edit_val.p_val.p_int8 -= (int8_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_int8 -= (int8_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_int8 > edit_val.val_max.int8)||(*edit_val.p_val.p_int8 < edit_val.val_min.int8)){ //if out of range
                         *edit_val.p_val.p_int8 = edit_val.val_min.int8;
@@ -725,7 +733,7 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_UINT8:
                     if(*edit_val.p_val.p_uint8 > edit_val.val_min.uint8){
-                        *edit_val.p_val.p_uint8 -= (uint8_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_uint8 -= (uint8_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_uint8 > edit_val.val_max.uint8)||(*edit_val.p_val.p_uint8 < edit_val.val_min.uint8)){ //if out of range
                         *edit_val.p_val.p_uint8 = edit_val.val_min.uint8;
@@ -733,7 +741,7 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_INT16:
                     if(*edit_val.p_val.p_int16 > edit_val.val_min.int16){
-                        *edit_val.p_val.p_int16 -= (int16_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_int16 -= (int16_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_int16 > edit_val.val_max.int16)||(*edit_val.p_val.p_int16 < edit_val.val_min.int16)){ //if out of range
                         *edit_val.p_val.p_int16 = edit_val.val_min.int16;
@@ -741,7 +749,7 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_UINT16:
                     if(*edit_val.p_val.p_uint16 > edit_val.val_min.uint16){
-                        *edit_val.p_val.p_uint16 -= (uint16_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_uint16 -= (uint16_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_uint16 > edit_val.val_max.uint16)||(*edit_val.p_val.p_uint16 < edit_val.val_min.uint16)){ //if out of range
                         *edit_val.p_val.p_uint16 = edit_val.val_min.uint16;
@@ -749,7 +757,7 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_INT32:
                     if(*edit_val.p_val.p_int32 > edit_val.val_min.int32){
-                        *edit_val.p_val.p_int32 -= (int32_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_int32 -= (int32_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_int32 > edit_val.val_max.int32)||(*edit_val.p_val.p_int32 < edit_val.val_min.int32)){ //if out of range
                         *edit_val.p_val.p_int32 = edit_val.val_min.int32;
@@ -757,10 +765,18 @@ void navigation_task (void const * argument){
                     break;
                 case VAL_UINT32:
                     if(*edit_val.p_val.p_uint32 > edit_val.val_min.uint32){
-                        *edit_val.p_val.p_uint32 -= (uint32_t)uint32_pow(10, edit_val.digit);
+                        *edit_val.p_val.p_uint32 -= (uint32_t)uint32_pow(10, (uint8_t)edit_val.digit);
                     }
                     if((*edit_val.p_val.p_uint32 > edit_val.val_max.uint32)||(*edit_val.p_val.p_uint32 < edit_val.val_min.uint32)){ //if out of range
                         *edit_val.p_val.p_uint32 = edit_val.val_min.uint32;
+                    }
+                    break;
+                case VAL_FLOAT:
+                    if(*edit_val.p_val.p_float > edit_val.val_min.vfloat){
+                        *edit_val.p_val.p_float -= float_pow(10.0, edit_val.digit);
+                    }
+                    if((*edit_val.p_val.p_float > edit_val.val_max.vfloat)||(*edit_val.p_val.p_float < edit_val.val_min.vfloat)){ //if out of range
+                        *edit_val.p_val.p_float = edit_val.val_min.vfloat;
                     }
                     break;
                 default:
@@ -775,7 +791,7 @@ void navigation_task (void const * argument){
             }
             if(button_click(BUTTON_RIGHT,BUTTON_CLICK_TIME)){
                 //shift position right
-                if(edit_val.digit > 0){
+                if(edit_val.digit > edit_val.digit_min){
                     edit_val.digit--;
                 }
             }
@@ -1004,7 +1020,11 @@ static void value_print(u8 tick){
         }
     }else if(navigation_style == DIGIT_EDIT){
         print_enter_ok();
-        LCD_invert_area(127-(u8)(edit_val.digit+edit_val.select_shift+1)*edit_val.select_width,26,127-(u8)(edit_val.digit+edit_val.select_shift)*edit_val.select_width,38);
+        if(edit_val.digit < 0){
+            LCD_invert_area(127-(u8)(edit_val.digit+edit_val.select_shift)*edit_val.select_width,26,127-(u8)(edit_val.digit+edit_val.select_shift-1)*edit_val.select_width,38);
+        }else{
+            LCD_invert_area(127-(u8)(edit_val.digit+edit_val.select_shift+1)*edit_val.select_width,26,127-(u8)(edit_val.digit+edit_val.select_shift)*edit_val.select_width,38);
+        }
     }
 }
 
@@ -1143,6 +1163,7 @@ static void set_edit_value(menu_page_t page){
     case ACT_EN_0:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1153,6 +1174,7 @@ static void set_edit_value(menu_page_t page){
     case ACT_EN_1:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1163,6 +1185,7 @@ static void set_edit_value(menu_page_t page){
     case ACT_EN_2:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1173,6 +1196,7 @@ static void set_edit_value(menu_page_t page){
     case ACT_EN_3:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1183,6 +1207,7 @@ static void set_edit_value(menu_page_t page){
     case ACT_SET_0:
         edit_val.type = VAL_FLOAT;
         edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
         edit_val.digit = 0;
         edit_val.val_min.vfloat = 0.0;
         edit_val.val_max.vfloat = 100.0;
@@ -1191,14 +1216,42 @@ static void set_edit_value(menu_page_t page){
         edit_val.select_width = Font_7x10.FontWidth;
         break;
     case ACT_SET_1:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[VALVE_OUT].set_value;
+        edit_val.select_shift = 3;
+        edit_val.select_width = Font_7x10.FontWidth;
         break;
     case ACT_SET_2:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[TMPR_IN].set_value;
+        edit_val.select_shift = 4;
+        edit_val.select_width = Font_7x10.FontWidth;
         break;
     case ACT_SET_3:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[HUM_IN].set_value;
+        edit_val.select_shift = 3;
+        edit_val.select_width = Font_7x10.FontWidth;
         break;
     case RELE_AUTO_MAN_0:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1209,6 +1262,7 @@ static void set_edit_value(menu_page_t page){
     case RELE_AUTO_MAN_1:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1219,6 +1273,7 @@ static void set_edit_value(menu_page_t page){
     case RELE_AUTO_MAN_2:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1229,6 +1284,7 @@ static void set_edit_value(menu_page_t page){
     case RELE_AUTO_MAN_3:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1239,6 +1295,7 @@ static void set_edit_value(menu_page_t page){
     case RELE_AUTO_MAN_4:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1249,6 +1306,7 @@ static void set_edit_value(menu_page_t page){
     case RELE_AUTO_MAN_5:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
@@ -1260,6 +1318,7 @@ static void set_edit_value(menu_page_t page){
         if(dcts_rele[FAN_IN].state.control_by_act == 0){
             edit_val.type = VAL_UINT8;
             edit_val.digit_max = 0;
+            edit_val.digit_min = 0;
             edit_val.digit = 0;
             edit_val.val_min.uint8 = 0;
             edit_val.val_max.uint8 = 1;
@@ -1272,6 +1331,7 @@ static void set_edit_value(menu_page_t page){
         if(dcts_rele[HEATER].state.control_by_act == 0){
             edit_val.type = VAL_UINT8;
             edit_val.digit_max = 0;
+            edit_val.digit_min = 0;
             edit_val.digit = 0;
             edit_val.val_min.uint8 = 0;
             edit_val.val_max.uint8 = 1;
@@ -1284,6 +1344,7 @@ static void set_edit_value(menu_page_t page){
         if(dcts_rele[FREEZER].state.control_by_act == 0){
             edit_val.type = VAL_UINT8;
             edit_val.digit_max = 0;
+            edit_val.digit_min = 0;
             edit_val.digit = 0;
             edit_val.val_min.uint8 = 0;
             edit_val.val_max.uint8 = 1;
@@ -1296,6 +1357,7 @@ static void set_edit_value(menu_page_t page){
         if(dcts_rele[FAN_CONVECTION].state.control_by_act == 0){
             edit_val.type = VAL_UINT8;
             edit_val.digit_max = 0;
+            edit_val.digit_min = 0;
             edit_val.digit = 0;
             edit_val.val_min.uint8 = 0;
             edit_val.val_max.uint8 = 1;
@@ -1308,6 +1370,7 @@ static void set_edit_value(menu_page_t page){
         if(dcts_rele[WTR_PUMP].state.control_by_act == 0){
             edit_val.type = VAL_UINT8;
             edit_val.digit_max = 0;
+            edit_val.digit_min = 0;
             edit_val.digit = 0;
             edit_val.val_min.uint8 = 0;
             edit_val.val_max.uint8 = 1;
@@ -1320,6 +1383,7 @@ static void set_edit_value(menu_page_t page){
         if(dcts_rele[RESERV].state.control_by_act == 0){
             edit_val.type = VAL_UINT8;
             edit_val.digit_max = 0;
+            edit_val.digit_min = 0;
             edit_val.digit = 0;
             edit_val.val_min.uint8 = 0;
             edit_val.val_max.uint8 = 1;
@@ -1331,6 +1395,7 @@ static void set_edit_value(menu_page_t page){
     case MDB_ADDR:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 2;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 255;
@@ -1341,6 +1406,7 @@ static void set_edit_value(menu_page_t page){
     case MDB_BITRATE:
         edit_val.type = VAL_UINT16;
         edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint16 = 0;
         edit_val.val_max.uint16 = 11;
@@ -1351,6 +1417,7 @@ static void set_edit_value(menu_page_t page){
     case LIGHT_LVL:
         edit_val.type = VAL_UINT16;
         edit_val.digit_max = 1;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint16 = 0;
         edit_val.val_max.uint16 = 10;
@@ -1361,6 +1428,7 @@ static void set_edit_value(menu_page_t page){
     case AUTO_OFF:
         edit_val.type = VAL_UINT16;
         edit_val.digit_max = 1;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint16 = 0;
         edit_val.val_max.uint16 = 10;
@@ -1371,6 +1439,7 @@ static void set_edit_value(menu_page_t page){
     case TIME_HOUR:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 1;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 23;
@@ -1381,6 +1450,7 @@ static void set_edit_value(menu_page_t page){
     case TIME_MIN:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 1;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 59;
@@ -1391,6 +1461,7 @@ static void set_edit_value(menu_page_t page){
     case TIME_SEC:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 1;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 59;
@@ -1401,6 +1472,7 @@ static void set_edit_value(menu_page_t page){
     case DATE_DAY:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 1;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 1;
         edit_val.val_max.uint8 = 31;
@@ -1411,6 +1483,7 @@ static void set_edit_value(menu_page_t page){
     case DATE_MONTH:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 1;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 1;
         edit_val.val_max.uint8 = 12;
@@ -1421,6 +1494,7 @@ static void set_edit_value(menu_page_t page){
     case DATE_YEAR:
         edit_val.type = VAL_UINT16;
         edit_val.digit_max = 3;
+        edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint16 = 2000;
         edit_val.val_max.uint16 = 3000;
@@ -2339,6 +2413,22 @@ uint32_t uint32_pow(uint16_t x, uint8_t pow){
         pow--;
     }
     return result;
+}
+
+float float_pow(float x, int pow){
+    float result = 1.0;
+    if(pow > 0){
+        while(pow > 0){
+            result *= x;
+            pow--;
+        }
+    }else if(pow < 0){
+        while(pow < 0){
+            result /= x;
+            pow++;
+        }
+    }
+    return  result;
 }
 
 #ifdef  USE_FULL_ASSERT

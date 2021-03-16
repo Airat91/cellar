@@ -172,6 +172,7 @@ typedef enum{
      edit_val_type_t val_min;
      edit_val_type_t val_max;
      int8_t digit;
+     int8_t digit_min;
      int8_t digit_max;
      edit_val_type type;
      uint8_t select_width;
@@ -246,6 +247,7 @@ uint32_t us_tim_get_value(void);
 void us_tim_delay(uint32_t us);
 uint32_t uint32_pow(uint16_t x, uint8_t pow);
 uint16_t uint16_pow(uint16_t x, uint16_t pow);
+float float_pow(float x, int pow);
 
 
 #endif /* __MAIN_H__ */
