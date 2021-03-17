@@ -85,7 +85,7 @@
 #define MEAS_NUM 20
 #define ACT_NUM 4
 #define RELE_NUM 6
-#define SAVED_PARAMS_SIZE 22
+#define SAVED_PARAMS_SIZE 30
 
 #if(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)
     #error(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)
@@ -187,6 +187,7 @@ typedef union{
         uint16_t lcd_backlight_time;
         uint16_t act_enable[4];
         float    act_set[4];
+        float    act_hyst[4];
         uint16_t rele[6];
     }params;
     uint16_t word[SAVED_PARAMS_SIZE];

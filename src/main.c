@@ -598,6 +598,9 @@ void display_task(void const * argument){
         case INFO:
             info_print();
             break;
+        case SAVE_CHANGES:
+            save_page_print();
+            break;
         default:
             if(selectedMenuItem->Child_num > 0){
                 menu_page_print(tick);
@@ -1072,21 +1075,28 @@ static int get_param_value(char* string, menu_page_t page){
     case ACT_EN_1:
     case ACT_EN_2:
     case ACT_EN_3:
-        sprintf(string, "%s", off_on_descr[dcts_act[(uint8_t)(page - ACT_EN_0)/4].state.control]);
+        sprintf(string, "%s", off_on_descr[dcts_act[(uint8_t)(page - ACT_EN_0)/5].state.control]);
         break;
 
     case ACT_SET_0:
     case ACT_SET_1:
     case ACT_SET_2:
     case ACT_SET_3:
-        sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_EN_0)/4].set_value, dcts_act[(uint8_t)(page - ACT_EN_0)/4].unit_cyr);
+        sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_EN_0)/5].set_value, dcts_act[(uint8_t)(page - ACT_EN_0)/5].unit_cyr);
+        break;
+
+    case ACT_HYST_0:
+    case ACT_HYST_1:
+    case ACT_HYST_2:
+    case ACT_HYST_3:
+        sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_HYST_0)/5].hysteresis, dcts_act[(uint8_t)(page - ACT_HYST_0)/5].unit_cyr);
         break;
 
     case ACT_CUR_0:
     case ACT_CUR_1:
     case ACT_CUR_2:
     case ACT_CUR_3:
-        sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_CUR_0)/4].meas_value, dcts_act[(uint8_t)(page - ACT_CUR_0)/4].unit_cyr);
+        sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_CUR_0)/5].meas_value, dcts_act[(uint8_t)(page - ACT_CUR_0)/5].unit_cyr);
         break;
 
     case RELE_AUTO_MAN_0:
@@ -1245,6 +1255,50 @@ static void set_edit_value(menu_page_t page){
         edit_val.val_min.vfloat = 0.0;
         edit_val.val_max.vfloat = 100.0;
         edit_val.p_val.p_float = &dcts_act[HUM_IN].set_value;
+        edit_val.select_shift = 3;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case ACT_HYST_0:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[VALVE_IN].hysteresis;
+        edit_val.select_shift = 3;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case ACT_HYST_1:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[VALVE_OUT].hysteresis;
+        edit_val.select_shift = 3;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case ACT_HYST_2:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[TMPR_IN].hysteresis;
+        edit_val.select_shift = 4;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case ACT_HYST_3:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[HUM_IN].hysteresis;
         edit_val.select_shift = 3;
         edit_val.select_width = Font_7x10.FontWidth;
         break;
@@ -2052,6 +2106,18 @@ void control_task(void const * argument){
     channels_init();
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
+        if(dcts_act[VALVE_IN].state.control){
+            //
+        }
+        if(dcts_act[VALVE_OUT].state.control){
+
+        }
+        if(dcts_act[TMPR_IN].state.control){
+
+        }
+        if(dcts_act[HUM_IN].state.control){
+
+        }
 
         // control DO channels
         for(u8 i = 0; i < DO_NUM; i ++){
@@ -2211,12 +2277,16 @@ static void save_params(void){
     static menuItem* current_menu;
     current_menu = selectedMenuItem;
     menuChange(&save_changes);
+
+    // store ModBus params
+    config.params.mdb_address = dcts.dcts_address;
+    config.params.mdb_bitrate = (uint16_t)bitrate_array[bitrate_array_pointer];
     // store dcts_act
     for(uint8_t i = 0; i < ACT_NUM; i++){
         config.params.act_set[i] = dcts_act[i].set_value;
+        config.params.act_hyst[i] = dcts_act[i].hysteresis;
         config.params.act_enable[i] = dcts_act[i].state.control;
     }
-
     // store dcts_rele
     for(uint8_t i = 0; i < RELE_NUM; i++){
         uint8_t temp = dcts_rele[i].state.control_by_act;
@@ -2239,8 +2309,7 @@ static void save_params(void){
     for(uint8_t i = 0; i < SAVED_PARAMS_SIZE; i ++){
         save_to_flash(area_cnt, i, &config.word[i]);
     }
-    // rewrite new params
-    dcts.dcts_address = (uint8_t)config.params.mdb_address;
+    // reinit uart
     uart_deinit();
     uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
     //delay for show message
@@ -2265,9 +2334,12 @@ static void restore_params(void){
             addr++;
         }
 
+        // restore dcts_address
+        dcts.dcts_address = (uint8_t)config.params.mdb_address;
         // restore dcts_act
         for(uint8_t i = 0; i < ACT_NUM; i++){
             dcts_act[i].set_value = config.params.act_set[i];
+            dcts_act[i].hysteresis = config.params.act_hyst[i];
             dcts_act[i].state.control = (uint8_t)config.params.act_enable[i];
         }
 
@@ -2278,7 +2350,6 @@ static void restore_params(void){
         }
     }else{
         //init default values if saved params not found
-        config.params.mdb_address = dcts.dcts_address;
         config.params.mdb_bitrate = BITRATE_115200;
     }
     for(bitrate_array_pointer = 0; bitrate_array_pointer < 14; bitrate_array_pointer++){
