@@ -249,6 +249,12 @@ typedef enum{
     CH_MODE_PWM,
 }ch_mode_t;
 
+typedef enum{
+    PUMP_EMPTY = 0,
+    PUMP_FILLING,
+    PUMP_ACTIVE,
+}pump_st_t;
+
 typedef struct{
     ch_mode_t mode;
     GPIO_TypeDef * port;

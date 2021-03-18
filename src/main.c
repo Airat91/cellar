@@ -2133,6 +2133,7 @@ void control_task(void const * argument){
     GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    static pump_st_t pump_state = PUMP_EMPTY;
     channels_init();
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
@@ -2164,6 +2165,33 @@ void control_task(void const * argument){
         }
         if(dcts_act[HUM_IN].state.control){
 
+        }
+        if(dcts_act[AUTO_PUMP].state.control){
+            switch(pump_state){
+            case PUMP_EMPTY:
+                if(dcts_meas[WTR_MIN_RES].value < config.params.wtr_min_ref){
+                    pump_state = PUMP_FILLING;
+                }
+                break;
+            case PUMP_FILLING:
+                if(dcts_meas[WTR_MIN_RES].value > config.params.wtr_min_ref){
+                    pump_state = PUMP_EMPTY;
+                }else if(dcts_meas[WTR_MAX_RES].value < config.params.wtr_max_ref){
+                    pump_state = PUMP_ACTIVE;
+                }
+                break;
+            case PUMP_ACTIVE:
+                dcts_act[WTR_PUMP].state.pin_state = 1;
+                if(dcts_meas[WTR_MIN_RES].value > config.params.wtr_min_ref){
+                    dcts_act[WTR_PUMP].state.pin_state = 0;
+                    pump_state = PUMP_EMPTY;
+                }
+                break;
+            }
+            if(dcts_rele[WTR_PUMP].state.control_by_act == 1){
+                if(dcts_rele[WTR_PUMP].state.control != dcts_act[WTR_PUMP].state.pin_state)
+                dcts_rele[WTR_PUMP].state.control = dcts_act[WTR_PUMP].state.pin_state;
+            }
         }
 
         // control DO channels
