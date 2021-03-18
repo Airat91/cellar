@@ -111,6 +111,45 @@
 }
 #endif
 
+ typedef enum {
+     TMPR_IN_1 = 0,
+     TMPR_IN_2,
+     TMPR_IN_AVG,
+     HUM_IN_1,
+     HUM_IN_2,
+     HUM_IN_AVG,
+     TMPR_OUT,
+     HUM_OUT,
+     WTRL_LVL_HIGH_ADC,
+     WTRL_LVL_HIGH_VLT,
+     WTRL_LVL_LOW_ADC,
+     WTRL_LVL_LOW_VLT,
+     WTR_MIN_RES,
+     WTR_MIN_ADC,
+     WTR_MIN_VLT,
+     WTR_MAX_RES,
+     WTR_MAX_ADC,
+     WTR_MAX_VLT,
+     VREF_ADC,
+     VBAT_VLT,
+ }dcts_meas_t;
+
+ typedef enum {
+     VALVE_IN = 0,
+     VALVE_OUT,
+     TMPR_IN,
+     HUM_IN,
+ }dcts_act_t;
+
+ typedef enum {
+     FAN_IN = 0,
+     HEATER,
+     FREEZER,
+     FAN_CONVECTION,
+     WTR_PUMP,
+     RESERV,
+ }dcts_rele_t;
+
 typedef enum{
     MENU_NAVIGATION,
     DIGIT_EDIT,

@@ -19,8 +19,9 @@ ADC_HandleTypeDef hadc1;
 #define ADC_PERIOD 100
 #define ADC_MAX 4095
 #define ADC_VREF 3.3f
+#define INPUT_RES 10000.0f
 
-#define PWR_K   (float)2.187
+#define PWR_K   (float)10.1
 #define VREF_INT (float)1.2
 
 /*========== FUNCTIONS ==========*/
@@ -49,7 +50,7 @@ int adc_init (void){
     hadc1.Init.DiscontinuousConvMode = DISABLE;
     hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
     hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-    hadc1.Init.NbrOfConversion = 5;
+    hadc1.Init.NbrOfConversion = 1;
     if (HAL_ADC_Init(&hadc1) != HAL_OK)
     {
         result = -1;
@@ -63,27 +64,27 @@ int adc_init (void){
     sConfigInjected.InjectedOffset = 0;
 
     //Configure PWR Channel
-    sConfigInjected.InjectedChannel = ADC_CHANNEL_0;
+    sConfigInjected.InjectedChannel = ADC_CHANNEL_4;
     sConfigInjected.InjectedRank = ADC_INJECTED_RANK_1;
     if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
     {
         result = -2;
     }
-    //Configure WTR_LEV Channel
-    sConfigInjected.InjectedChannel = ADC_CHANNEL_4;
+    //Configure WTR_MIN Channel
+    sConfigInjected.InjectedChannel = input_ch[0].adc_channel;
     sConfigInjected.InjectedRank = ADC_INJECTED_RANK_2;
     if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
     {
         result = -3;
     }
-    //Configure WTR_TMP Channel
-    sConfigInjected.InjectedChannel = ADC_CHANNEL_5;
+    //Configure WTR_MAX Channel
+    sConfigInjected.InjectedChannel = input_ch[1].adc_channel;
     sConfigInjected.InjectedRank = ADC_INJECTED_RANK_3;
     if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
     {
         result = -4;
     }
-    //Configure TMP Channel
+    //Configure VREF Channel
     sConfigInjected.InjectedChannel = ADC_CHANNEL_VREFINT;
     sConfigInjected.InjectedRank = ADC_INJECTED_RANK_4;
     if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
@@ -121,10 +122,6 @@ void adc_gpio_init (void){
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pin = PWR_PIN;
     HAL_GPIO_Init(PWR_PORT, &GPIO_InitStruct);
-    /*GPIO_InitStruct.Pin = WTR_LEV_PIN;
-    HAL_GPIO_Init(WTR_LEV_PORT, &GPIO_InitStruct);
-    GPIO_InitStruct.Pin = WTR_TMP_PIN;
-    HAL_GPIO_Init(WTR_TMP_PORT, &GPIO_InitStruct);*/
 }
 /**
  * @brief Deinit ADC gpio
@@ -143,10 +140,9 @@ void adc_gpio_deinit (void){
 void adc_task(void const * argument){
     (void)argument;
     uint16_t pwr[ADC_BUF_SIZE];
-    uint16_t wtr_lev[ADC_BUF_SIZE];
-    uint16_t wtr_tmp[ADC_BUF_SIZE];
+    uint16_t wtr_min[ADC_BUF_SIZE];
+    uint16_t wtr_max[ADC_BUF_SIZE];
     uint16_t vref[ADC_BUF_SIZE];
-    float pwr_f[ADC_BUF_SIZE];
     uint8_t tick = 0;
     float temp = 0.0;
     adc_init();
@@ -156,19 +152,17 @@ void adc_task(void const * argument){
         uint32_t wtr_lev_sum = 0;
         uint32_t wtr_tmp_sum = 0;
         uint32_t vref_sum = 0;
-        float    pwr_f_sum = 0.0;
 
 
         pwr[tick] = (uint16_t)hadc1.Instance->JDR1;
-        wtr_lev[tick] = (uint16_t)hadc1.Instance->JDR2;
-        wtr_tmp[tick] = (uint16_t)hadc1.Instance->JDR3;
+        wtr_min[tick] = (uint16_t)hadc1.Instance->JDR2;
+        wtr_max[tick] = (uint16_t)hadc1.Instance->JDR3;
         vref[tick] = (uint16_t)hadc1.Instance->JDR4;
-        //pwr_f[tick] = (float)pwr[tick]/vref[tick];
 
         for(uint8_t i = 0; i < ADC_BUF_SIZE; i++){
             pwr_sum += pwr[i];
-            wtr_lev_sum += wtr_lev[i];
-            wtr_tmp_sum += wtr_tmp[i];
+            wtr_lev_sum += wtr_min[i];
+            wtr_tmp_sum += wtr_max[i];
             vref_sum += vref[i];
             //pwr_f_sum += pwr_f[i];
         }
@@ -177,16 +171,23 @@ void adc_task(void const * argument){
         taskENTER_CRITICAL();
         dcts.dcts_pwr = temp/ADC_MAX*ADC_VREF*PWR_K;
 
-        /*dcts_meas[WTR_LVL_ADC].value = (float)wtr_lev_sum/ADC_BUF_SIZE;
-        dcts_meas[WTR_LVL_V].value = dcts_meas[WTR_LVL_ADC].value*ADC_VREF/ADC_MAX;
-        dcts_meas[WTR_LVL].value =adc_lvl_calc(dcts_meas[WTR_LVL_ADC].value);
+        dcts_meas[WTR_MIN_ADC].value = (float)wtr_lev_sum/ADC_BUF_SIZE;
+        dcts_meas[WTR_MIN_VLT].value = dcts_meas[WTR_MIN_ADC].value*ADC_VREF/ADC_MAX;
+        dcts_meas[WTR_MIN_RES].value = (ADC_VREF -  dcts_meas[WTR_MIN_VLT].value)*INPUT_RES/dcts_meas[WTR_MIN_VLT].value;
 
-        dcts_meas[WTR_TMPR_ADC].value = (float)wtr_tmp_sum/ADC_BUF_SIZE;
-        dcts_meas[WTR_TMPR_V].value = dcts_meas[WTR_TMPR_ADC].value*ADC_VREF/ADC_MAX;
-        dcts_meas[WTR_TMPR].value = adc_tmpr_calc(dcts_meas[WTR_TMPR_ADC].value);
+        dcts_meas[WTR_MAX_ADC].value = (float)wtr_lev_sum/ADC_BUF_SIZE;
+        dcts_meas[WTR_MAX_VLT].value = dcts_meas[WTR_MAX_ADC].value*ADC_VREF/ADC_MAX;
+        dcts_meas[WTR_MAX_RES].value = (ADC_VREF -  dcts_meas[WTR_MAX_VLT].value)*INPUT_RES/dcts_meas[WTR_MAX_VLT].value;
 
         dcts_meas[VREF_ADC].value = (float)vref_sum/ADC_BUF_SIZE;
-        dcts_meas[VREF_V].value = dcts_meas[VREF_ADC].value*ADC_VREF/ADC_MAX;*/
+
+        dcts_meas[WTR_MIN_ADC].valid = TRUE;
+        dcts_meas[WTR_MIN_VLT].valid = TRUE;
+        dcts_meas[WTR_MIN_RES].valid = TRUE;
+        dcts_meas[WTR_MAX_ADC].valid = TRUE;
+        dcts_meas[WTR_MAX_VLT].valid = TRUE;
+        dcts_meas[WTR_MAX_RES].valid = TRUE;
+        dcts_meas[VREF_ADC].valid = TRUE;
         taskEXIT_CRITICAL();
 
         tick++;

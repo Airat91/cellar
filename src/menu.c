@@ -49,12 +49,12 @@ MAKE_MENU       (main_page,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
     MAKE_MENU   (meas_ch_9,     meas_ch_10,     meas_ch_8,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_9,          "Дренаж верх В");
     MAKE_MENU   (meas_ch_10,    meas_ch_11,     meas_ch_9,      meas_channels,  NULL_ENTRY,     0,          MEAS_CH_10,         "Дренаж низ АЦП");
     MAKE_MENU   (meas_ch_11,    meas_ch_12,     meas_ch_10,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_11,         "Дренаж низ В");
-    MAKE_MENU   (meas_ch_12,    meas_ch_13,     meas_ch_11,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_12,         "Клапан приточ. угол");
-    MAKE_MENU   (meas_ch_13,    meas_ch_14,     meas_ch_12,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_13,         "Клапан приточ. АЦП");
-    MAKE_MENU   (meas_ch_14,    meas_ch_15,     meas_ch_13,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_14,         "Клапан приточ. В");
-    MAKE_MENU   (meas_ch_15,    meas_ch_16,     meas_ch_14,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_15,         "Клапан вытяжной угол");
-    MAKE_MENU   (meas_ch_16,    meas_ch_17,     meas_ch_15,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_16,         "Клапан вытяжной АЦП");
-    MAKE_MENU   (meas_ch_17,    meas_ch_18,     meas_ch_16,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_17,         "Клапан вытяжной В");
+    MAKE_MENU   (meas_ch_12,    meas_ch_13,     meas_ch_11,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_12,         "Мин уровень Ом");
+    MAKE_MENU   (meas_ch_13,    meas_ch_14,     meas_ch_12,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_13,         "Мин. уровень АЦП");
+    MAKE_MENU   (meas_ch_14,    meas_ch_15,     meas_ch_13,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_14,         "Мин. уровень В");
+    MAKE_MENU   (meas_ch_15,    meas_ch_16,     meas_ch_14,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_15,         "Макс. уровень Ом");
+    MAKE_MENU   (meas_ch_16,    meas_ch_17,     meas_ch_15,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_16,         "Макс. уровень АЦП");
+    MAKE_MENU   (meas_ch_17,    meas_ch_18,     meas_ch_16,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_17,         "Макс. уровень В");
     MAKE_MENU   (meas_ch_18,    meas_ch_19,     meas_ch_17,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_18,         "Опорное напр. АЦП");
     MAKE_MENU   (meas_ch_19,    meas_ch_0,      meas_ch_18,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_19,         "Батарейка В");
   MAKE_MENU     (act_channels,  rele_channels,  meas_channels,  main_page,      act_ch_0,       4,          ACT_CHANNELS,       "Упр. каналы");

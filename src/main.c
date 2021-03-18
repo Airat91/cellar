@@ -217,12 +217,12 @@ int main(void){
     osThreadDef(rtc_task, rtc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     rtcTaskHandle = osThreadCreate(osThread(rtc_task), NULL);
 
-    osThreadDef(display_task, display_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*4);
+    osThreadDef(display_task, display_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*2);
     displayTaskHandle = osThreadCreate(osThread(display_task), NULL);
 
-    /*osThreadDef(adc_task, adc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*2);
+    osThreadDef(adc_task, adc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*3);
     adcTaskHandle = osThreadCreate(osThread(adc_task), NULL);
-*/
+
     osThreadDef(buttons_task, buttons_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     buttonsTaskHandle = osThreadCreate(osThread(buttons_task), NULL);
 
@@ -236,7 +236,7 @@ int main(void){
     uartTaskHandle = osThreadCreate(osThread(uart_task), NULL);
 */
 
-    osThreadDef(control_task, control_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*4);
+    osThreadDef(control_task, control_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*2);
     controlTaskHandle = osThreadCreate(osThread(control_task), NULL);
 
     /* Start scheduler */
@@ -247,45 +247,6 @@ int main(void){
     }
 
 }
-
-typedef enum {
-    TMPR_IN_1 = 0,
-    TMPR_IN_2,
-    TMPR_IN_AVG,
-    HUM_IN_1,
-    HUM_IN_2,
-    HUM_IN_AVG,
-    TMPR_OUT,
-    HUM_OUT,
-    WTRL_LVL_HIGH_ADC,
-    WTRL_LVL_HIGH_VLT,
-    WTRL_LVL_LOW_ADC,
-    WTRL_LVL_LOW_VLT,
-    VALVE_IN_DEGREE,
-    VALVE_IN_ADC,
-    VALVE_IN_VLT,
-    VALVE_OUT_DEGREE,
-    VALVE_OUT_ADC,
-    VALVE_OUT_VLT,
-    VREF_ADC,
-    VBAT_VLT,
-}dcts_meas_t;
-
-typedef enum {
-    VALVE_IN = 0,
-    VALVE_OUT,
-    TMPR_IN,
-    HUM_IN,
-}dcts_act_t;
-
-typedef enum {
-    FAN_IN = 0,
-    HEATER,
-    FREEZER,
-    FAN_CONVECTION,
-    WTR_PUMP,
-    RESERV,
-}dcts_rele_t;
 
 void dcts_init (void) {
 
@@ -322,12 +283,12 @@ void dcts_init (void) {
     dcts_meas_channel_init(WTRL_LVL_HIGH_VLT, "Drain high V", "Дренаж верх В", "V", "В");
     dcts_meas_channel_init(WTRL_LVL_LOW_ADC, "Drain low ADC", "Дренаж низ АЦП", "adc", "adc");
     dcts_meas_channel_init(WTRL_LVL_LOW_VLT, "Drain low V", "Дренаж низ В", "V", "В");
-    dcts_meas_channel_init(VALVE_IN_DEGREE, "Valve IN degree", "Клапан приточ. угол", "°", "°");
-    dcts_meas_channel_init(VALVE_IN_ADC, "Valve IN ADC", "Клапан приточ. АЦП", "adc", "adc");
-    dcts_meas_channel_init(VALVE_IN_VLT, "Valve IN V", "Клапан приточ. В", "V", "В");
-    dcts_meas_channel_init(VALVE_OUT_DEGREE, "Valve OUT degree", "Клапан вытяжной угол", "°", "°");
-    dcts_meas_channel_init(VALVE_OUT_ADC, "Valve OUT ADC", "Клапан вытяжной АЦП", "adc", "adc");
-    dcts_meas_channel_init(VALVE_OUT_VLT, "Valve OUT V", "Клапан вытяжной В", "V", "В");
+    dcts_meas_channel_init(WTR_MIN_RES, "Valve IN degree", "Клапан приточ. угол", "°", "°");
+    dcts_meas_channel_init(WTR_MIN_ADC, "Valve IN ADC", "Клапан приточ. АЦП", "adc", "adc");
+    dcts_meas_channel_init(WTR_MIN_VLT, "Valve IN V", "Клапан приточ. В", "V", "В");
+    dcts_meas_channel_init(WTR_MAX_RES, "Valve OUT degree", "Клапан вытяжной угол", "°", "°");
+    dcts_meas_channel_init(WTR_MAX_ADC, "Valve OUT ADC", "Клапан вытяжной АЦП", "adc", "adc");
+    dcts_meas_channel_init(WTR_MAX_VLT, "Valve OUT V", "Клапан вытяжной В", "V", "В");
     dcts_meas_channel_init(VREF_ADC, "Vref ADC", "Опорное напр. АЦП", "adc", "adc");
     dcts_meas_channel_init(VBAT_VLT, "RTC battery V", "Батарейка В", "V", "В");
 
@@ -2053,7 +2014,7 @@ void uart_task(void const * argument){
     (void)argument;
     uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
     uint16_t tick = 0;
-    char string[50];
+    char string[100];
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
         if((uart_2.state & UART_STATE_RECIEVE)&&\
@@ -2089,7 +2050,7 @@ void uart_task(void const * argument){
                 if(i == MEAS_NUM - 1){
                     strncat(string,"\n",1);
                 }
-                //uart_send(string,(uint16_t)strlen(string));
+                uart_send(string,(uint16_t)strlen(string));
             }
         }else{
             tick++;
@@ -2110,10 +2071,27 @@ void control_task(void const * argument){
             //
         }
         if(dcts_act[VALVE_OUT].state.control){
-
+            //
         }
         if(dcts_act[TMPR_IN].state.control){
+            /*if(dcts_meas[TMPR_IN_AVG].valid){
+                dcts_act[TMPR_IN].meas_value = dcts_meas[TMPR_IN_AVG].value;
 
+                if((dcts_act[TMPR_IN].meas_value < (dcts_act[TMPR_IN].set_value + 0.5f*dcts_act[TMPR_IN].hysteresis))&&
+                        (dcts_rele[HEATER].state.control == 0)){
+                    dcts_act[TMPR_IN].state.pin_state = 0;
+
+                }
+
+            }else{
+                // current value unknown
+                dcts_act[TMPR_IN].state.pin_state = 0;
+            }
+            // set rele_control if control_by_act enable
+            if(dcts_rele[HEATER].state.control_by_act == 1){
+                if(dcts_rele[HEATER].state.control != dcts_act[TMPR_IN].state.pin_state)
+                dcts_rele[HEATER].state.control = dcts_act[TMPR_IN].state.pin_state;
+            }*/
         }
         if(dcts_act[HUM_IN].state.control){
 
