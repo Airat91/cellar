@@ -2064,6 +2064,9 @@ void uart_task(void const * argument){
 #define control_task_period 5
 void control_task(void const * argument){
     (void)argument;
+    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     channels_init();
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
@@ -2100,12 +2103,20 @@ void control_task(void const * argument){
         // control DO channels
         for(u8 i = 0; i < DO_NUM; i ++){
             if(dcts_rele[i].state.control == 1){
+                //rele on
                 if(dcts_rele[i].state.status == 0){
+                    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+                    HAL_GPIO_Init (do_ch[i].port, &GPIO_InitStruct);
                     HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_RESET);
                     dcts_rele[i].state.status = 1;
+                }else{
+
                 }
             }else{
+                //rele off
                 if(dcts_rele[i].state.status == 1){
+                    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+                    HAL_GPIO_Init (do_ch[i].port, &GPIO_InitStruct);
                     HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
                     dcts_rele[i].state.status = 0;
                 }
@@ -2451,12 +2462,12 @@ static void channels_init(void){
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
     GPIO_InitTypeDef GPIO_InitStruct;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     for(u8 i = 0;i < DO_NUM; i++){
         GPIO_InitStruct.Pin = do_ch[i].pin;
-        HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
+        //HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
         HAL_GPIO_Init (do_ch[i].port, &GPIO_InitStruct);
     }
     for(u8 i = 0; i < IN_CHANNEL_NUM; i++){
