@@ -149,8 +149,8 @@ void adc_task(void const * argument){
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
         uint32_t pwr_sum = 0;
-        uint32_t wtr_lev_sum = 0;
-        uint32_t wtr_tmp_sum = 0;
+        uint32_t wtr_min_sum = 0;
+        uint32_t wtr_max_sum = 0;
         uint32_t vref_sum = 0;
 
 
@@ -161,8 +161,8 @@ void adc_task(void const * argument){
 
         for(uint8_t i = 0; i < ADC_BUF_SIZE; i++){
             pwr_sum += pwr[i];
-            wtr_lev_sum += wtr_min[i];
-            wtr_tmp_sum += wtr_max[i];
+            wtr_min_sum += wtr_min[i];
+            wtr_max_sum += wtr_max[i];
             vref_sum += vref[i];
             //pwr_f_sum += pwr_f[i];
         }
@@ -171,11 +171,11 @@ void adc_task(void const * argument){
         taskENTER_CRITICAL();
         dcts.dcts_pwr = temp/ADC_MAX*ADC_VREF*PWR_K;
 
-        dcts_meas[WTR_MIN_ADC].value = (float)wtr_lev_sum/ADC_BUF_SIZE;
+        dcts_meas[WTR_MIN_ADC].value = (float)wtr_min_sum/ADC_BUF_SIZE;
         dcts_meas[WTR_MIN_VLT].value = dcts_meas[WTR_MIN_ADC].value*ADC_VREF/ADC_MAX;
         dcts_meas[WTR_MIN_RES].value = (ADC_VREF -  dcts_meas[WTR_MIN_VLT].value)*INPUT_RES/dcts_meas[WTR_MIN_VLT].value;
 
-        dcts_meas[WTR_MAX_ADC].value = (float)wtr_lev_sum/ADC_BUF_SIZE;
+        dcts_meas[WTR_MAX_ADC].value = (float)wtr_max_sum/ADC_BUF_SIZE;
         dcts_meas[WTR_MAX_VLT].value = dcts_meas[WTR_MAX_ADC].value*ADC_VREF/ADC_MAX;
         dcts_meas[WTR_MAX_RES].value = (ADC_VREF -  dcts_meas[WTR_MAX_VLT].value)*INPUT_RES/dcts_meas[WTR_MAX_VLT].value;
 

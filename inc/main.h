@@ -83,11 +83,11 @@
 #define STEP_PORT GPIOB
 
 #define MEAS_NUM 20
-#define ACT_NUM 4
+#define ACT_NUM 5
 #define RELE_NUM 6
-#define SAVED_PARAMS_SIZE 30
+#define SAVED_PARAMS_SIZE 39
 
-#if(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)
+#if(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE/2)
     #error(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)
 #endif
 
@@ -139,6 +139,7 @@
      VALVE_OUT,
      TMPR_IN,
      HUM_IN,
+     AUTO_PUMP,
  }dcts_act_t;
 
  typedef enum {
@@ -224,10 +225,12 @@ typedef union{
         uint16_t mdb_bitrate;
         uint16_t lcd_backlight_lvl;
         uint16_t lcd_backlight_time;
-        uint16_t act_enable[4];
-        float    act_set[4];
-        float    act_hyst[4];
-        uint16_t rele[6];
+        uint16_t act_enable[ACT_NUM];
+        float    act_set[ACT_NUM];
+        float    act_hyst[ACT_NUM];
+        float    wtr_min_ref;
+        float    wtr_max_ref;
+        uint16_t rele[RELE_NUM];
     }params;
     uint16_t word[SAVED_PARAMS_SIZE];
 }saved_to_flash_t;

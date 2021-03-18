@@ -8,7 +8,7 @@
   * @addtogroup LCD
   * @{
   */
-#define SAVE_AREA_SIZE 64   // One record size in bytes
+#define SAVE_AREA_SIZE 128   // One record size in bytes
 #define PAGE_SIZE 1024
 #define FLASH_SAVE_PAGE 127
 #define FLASH_START_ADDRESS 0x08000000

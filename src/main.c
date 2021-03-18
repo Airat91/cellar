@@ -1036,6 +1036,7 @@ static int get_param_value(char* string, menu_page_t page){
     case ACT_EN_1:
     case ACT_EN_2:
     case ACT_EN_3:
+    case ACT_EN_4:
         sprintf(string, "%s", off_on_descr[dcts_act[(uint8_t)(page - ACT_EN_0)/5].state.control]);
         break;
 
@@ -1043,6 +1044,7 @@ static int get_param_value(char* string, menu_page_t page){
     case ACT_SET_1:
     case ACT_SET_2:
     case ACT_SET_3:
+    case ACT_SET_4:
         sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_EN_0)/5].set_value, dcts_act[(uint8_t)(page - ACT_EN_0)/5].unit_cyr);
         break;
 
@@ -1050,6 +1052,7 @@ static int get_param_value(char* string, menu_page_t page){
     case ACT_HYST_1:
     case ACT_HYST_2:
     case ACT_HYST_3:
+    case ACT_HYST_4:
         sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_HYST_0)/5].hysteresis, dcts_act[(uint8_t)(page - ACT_HYST_0)/5].unit_cyr);
         break;
 
@@ -1057,7 +1060,15 @@ static int get_param_value(char* string, menu_page_t page){
     case ACT_CUR_1:
     case ACT_CUR_2:
     case ACT_CUR_3:
+    case ACT_CUR_4:
         sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_CUR_0)/5].meas_value, dcts_act[(uint8_t)(page - ACT_CUR_0)/5].unit_cyr);
+        break;
+
+    case WTR_MIN_REF:
+        sprintf(string, "%.1f", (double)config.params.wtr_min_ref);
+        break;
+    case WTR_MAX_REF:
+        sprintf(string, "%.1f", (double)config.params.wtr_max_ref);
         break;
 
     case RELE_AUTO_MAN_0:
@@ -1175,6 +1186,17 @@ static void set_edit_value(menu_page_t page){
         edit_val.select_shift = 0;
         edit_val.select_width = Font_7x10.FontWidth*5;
         break;
+    case ACT_EN_4:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_act[AUTO_PUMP].state.control;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*5;
+        break;
     case ACT_SET_0:
         edit_val.type = VAL_FLOAT;
         edit_val.digit_max = 2;
@@ -1216,6 +1238,17 @@ static void set_edit_value(menu_page_t page){
         edit_val.val_min.vfloat = 0.0;
         edit_val.val_max.vfloat = 100.0;
         edit_val.p_val.p_float = &dcts_act[HUM_IN].set_value;
+        edit_val.select_shift = 3;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case ACT_SET_4:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[AUTO_PUMP].set_value;
         edit_val.select_shift = 3;
         edit_val.select_width = Font_7x10.FontWidth;
         break;
@@ -1261,6 +1294,39 @@ static void set_edit_value(menu_page_t page){
         edit_val.val_max.vfloat = 100.0;
         edit_val.p_val.p_float = &dcts_act[HUM_IN].hysteresis;
         edit_val.select_shift = 3;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case ACT_HYST_4:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[AUTO_PUMP].hysteresis;
+        edit_val.select_shift = 3;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case WTR_MIN_REF:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 3;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 9999.0;
+        edit_val.p_val.p_float = &config.params.wtr_min_ref;
+        edit_val.select_shift = 2;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case WTR_MAX_REF:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 3;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 9999.0;
+        edit_val.p_val.p_float = &config.params.wtr_max_ref;
+        edit_val.select_shift = 2;
         edit_val.select_width = Font_7x10.FontWidth;
         break;
     case RELE_AUTO_MAN_0:
@@ -2278,9 +2344,7 @@ static void save_params(void){
     }
     // store dcts_rele
     for(uint8_t i = 0; i < RELE_NUM; i++){
-        uint8_t temp = dcts_rele[i].state.control_by_act;
-        temp |= dcts_rele[i].state.control << 1;
-        config.params.rele[i] = temp;
+        config.params.rele[i] = dcts_rele[i].state.control_by_act;
     }
 
     int area_cnt = find_free_area();
@@ -2334,8 +2398,7 @@ static void restore_params(void){
 
         // restore dcts_rele
         for(uint8_t i = 0; i < RELE_NUM; i++){
-            dcts_rele[i].state.control_by_act = (uint8_t)(config.params.rele[i] & 0x01);
-            dcts_rele[i].state.control = (uint8_t)((config.params.rele[i] & 0x0002)>>1);
+            dcts_rele[i].state.control_by_act = (uint8_t)(config.params.rele[i]);
         }
     }else{
         //init default values if saved params not found
