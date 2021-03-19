@@ -815,7 +815,7 @@ static void error_page_print(menu_page_t page){
 static void main_page_print(u8 tick){
     char string[50];
 
-    LCD_set_xy(0,47);
+    /*LCD_set_xy(0,47);
     LCD_print_char(1,&Icon_16x16,LCD_COLOR_BLACK);
 
     LCD_set_xy(17,47);
@@ -919,7 +919,246 @@ static void main_page_print(u8 tick){
 
     LCD_set_xy(0,0);
     sprintf(string,"Здесь будет главное окно");
-    LCD_print_ticker(string,&Font_7x10,LCD_COLOR_BLACK,18,tick);
+    LCD_print_ticker(string,&Font_7x10,LCD_COLOR_BLACK,18,tick);*/
+
+    //convection
+    LCD_set_xy(76,26);
+    if(dcts_rele[FAN_CONVECTION].state.control == 0){
+        LCD_print_char(6,&Icon_16x16,LCD_COLOR_BLACK);
+    }else{
+        switch(tick%4){
+        case 0:
+            LCD_print_char(4,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(21,31);
+            LCD_print_char(15,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(96,31);
+            LCD_print_char(13,&Icon_16x16,LCD_COLOR_BLACK);
+
+            LCD_set_xy(32,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(59,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(86,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+
+            LCD_set_xy(32,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(59,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(86,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 1:
+            LCD_print_char(5,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(21,37);
+            LCD_print_char(15,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(96,25);
+            LCD_print_char(13,&Icon_16x16,LCD_COLOR_BLACK);
+
+            LCD_set_xy(39,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(66,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(88,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_fill_area(84,48,92,64,LCD_COLOR_WHITE);
+
+            LCD_set_xy(28,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_fill_area(41,12,51,28,LCD_COLOR_WHITE);
+            LCD_set_xy(52,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(79,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 2:
+            LCD_print_char(2,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(21,42);
+            LCD_print_char(15,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(21,20);
+            LCD_print_char(15,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(96,42);
+            LCD_print_char(13,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(96,20);
+            LCD_print_char(13,&Icon_16x16,LCD_COLOR_BLACK);
+
+            LCD_set_xy(45,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(72,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+
+            LCD_set_xy(45,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(72,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 3:
+            LCD_print_char(3,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(21,25);
+            LCD_print_char(15,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(96,37);
+            LCD_print_char(13,&Icon_16x16,LCD_COLOR_BLACK);
+
+            LCD_set_xy(25,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_fill_area(25,48,27,64,LCD_COLOR_WHITE);
+            LCD_set_xy(52,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(79,50);
+            LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+
+            LCD_set_xy(39,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(66,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_set_xy(93,12);
+            LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+            LCD_fill_area(104,12,109,28,LCD_COLOR_WHITE);
+            break;
+        }
+    }
+
+    // temperature and hummidity out
+    LCD_set_xy(0,56);
+    sprintf(string,"%.1f%s",(double)dcts_meas[TMPR_OUT].value,dcts_meas[TMPR_OUT].unit_cyr);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+    LCD_set_xy(0,48);
+    sprintf(string,"%.1f%s",(double)dcts_meas[HUM_OUT].value,dcts_meas[HUM_OUT].unit_cyr);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+
+    //fan in
+    LCD_set_xy(3,31);
+    if(dcts_rele[FAN_IN].state.control == 0){
+        LCD_print_char(6,&Icon_16x16,LCD_COLOR_BLACK);
+    }else{
+        switch(tick%4){
+        case 0:
+            LCD_print_char(2,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 1:
+            LCD_print_char(3,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 2:
+            LCD_print_char(4,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 3:
+            LCD_print_char(5,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        }
+    }
+
+    //valve in
+    LCD_fill_area(0,21,1,48,LCD_COLOR_BLACK);
+    LCD_fill_area(20,21,21,48,LCD_COLOR_BLACK);
+    LCD_set_xy(3,12);
+    if(dcts_act[VALVE_IN].set_value < 10.0f){
+        LCD_print_char(16,&Icon_16x16,LCD_COLOR_BLACK);
+    }else if((dcts_act[VALVE_IN].set_value >= 10.0f)&&(dcts_act[VALVE_IN].set_value <= 90.0f)){
+        LCD_print_char(17,&Icon_16x16,LCD_COLOR_BLACK);
+    }else if(dcts_act[VALVE_IN].set_value > 90.0f){
+        LCD_print_char(18,&Icon_16x16,LCD_COLOR_BLACK);
+    }
+
+    //valve out
+    LCD_fill_area(107,52,108,63,LCD_COLOR_BLACK);
+    LCD_fill_area(126,52,127,63,LCD_COLOR_BLACK);
+    LCD_set_xy(110,43);
+    if(dcts_act[VALVE_OUT].set_value < 10.0f){
+        LCD_print_char(16,&Icon_16x16,LCD_COLOR_BLACK);
+    }else if((dcts_act[VALVE_OUT].set_value >= 10.0f)&&(dcts_act[VALVE_OUT].set_value <= 90.0f)){
+        LCD_print_char(17,&Icon_16x16,LCD_COLOR_BLACK);
+    }else if(dcts_act[VALVE_OUT].set_value > 90.0f){
+        LCD_print_char(18,&Icon_16x16,LCD_COLOR_BLACK);
+    }
+
+    //water pump
+    LCD_set_xy(94,0);
+    if(dcts_rele[WTR_PUMP].state.control == 0){
+        LCD_print_char(20,&Icon_16x16,LCD_COLOR_BLACK);
+    }else{
+        switch(tick%2){
+        case 0:
+            LCD_print_char(20,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 1:
+            LCD_print_char(21,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        }
+    }
+
+    //water level
+    LCD_set_xy(111,0);
+    if(dcts_meas[WTR_MIN_RES].value > config.params.wtr_min_ref){
+        //empty
+        LCD_print_char(22,&Icon_16x16,LCD_COLOR_BLACK);
+    }else if((dcts_meas[WTR_MIN_RES].value < config.params.wtr_min_ref)&&(dcts_meas[WTR_MAX_RES].value > config.params.wtr_max_ref)){
+        //min level
+        switch(tick%2){
+        case 0:
+            LCD_print_char(23,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 1:
+            LCD_print_char(24,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        }
+    }else if((dcts_meas[WTR_MIN_RES].value < config.params.wtr_min_ref)&&(dcts_meas[WTR_MAX_RES].value < config.params.wtr_max_ref)){
+        //max level
+        switch(tick%2){
+        case 0:
+            LCD_print_char(25,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 1:
+            LCD_print_char(26,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        }
+    }
+
+    //heating
+    LCD_set_xy(40,26);
+    if(dcts_rele[HEATER].state.control == 1){
+        switch(tick%4){
+        case 0:
+            LCD_print_char(7,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 1:
+            LCD_print_char(8,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 2:
+            LCD_print_char(9,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        case 3:
+            LCD_print_char(10,&Icon_16x16,LCD_COLOR_BLACK);
+            break;
+        }
+    }
+
+    //cooling
+    LCD_set_xy(58,26);
+    if(dcts_rele[FREEZER].state.control == 1){
+        LCD_print_char(11,&Icon_16x16,LCD_COLOR_BLACK);
+    }
+
+    //temperature and hummidity in
+    if(dcts_act[TMPR_IN].state.control == 1){
+        sprintf(string,"T %.1f%s (%.1f%s)",(double)dcts_act[TMPR_IN].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr,(double)dcts_act[TMPR_IN].set_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+    }else{
+        sprintf(string,"T %.1f%s",(double)dcts_act[TMPR_IN].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+    }
+    LCD_set_xy(align_text_right(string,Font_5x7)-36,7);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+
+    if(dcts_act[HUM_IN].state.control == 1){
+        sprintf(string,"Rh %.1f%s (%.1f%s)",(double)dcts_act[HUM_IN].meas_value,dcts_meas[HUM_IN_AVG].unit_cyr,(double)dcts_act[HUM_IN].set_value,dcts_meas[HUM_IN_AVG].unit_cyr);
+    }else{
+        sprintf(string,"Rh %.1f%s",(double)dcts_act[HUM_IN].meas_value,dcts_meas[HUM_IN_AVG].unit_cyr);
+    }
+    LCD_set_xy(align_text_right(string,Font_5x7)-36,0);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
+
+    //time
+    sprintf(string,"%02d:%02d:%02d",dcts.dcts_rtc.hour,dcts.dcts_rtc.minute,dcts.dcts_rtc.second);
+    LCD_set_xy(align_text_center(string,Font_5x7),45);
+    LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
 }
 
 static void print_header(void){
