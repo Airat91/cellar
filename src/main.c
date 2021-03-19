@@ -105,7 +105,7 @@ static void main_page_print(u8 tick);
 static void menu_page_print(u8 tick);
 static void value_print(u8 tick);
 static void error_page_print(menu_page_t page);
-static void save_page_print (void);
+static void save_page_print (u8 tick);
 static void info_print (void);
 /*static void meas_channels_print(void);
 static void calib_print(uint8_t start_channel);
@@ -217,7 +217,7 @@ int main(void){
     osThreadDef(rtc_task, rtc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     rtcTaskHandle = osThreadCreate(osThread(rtc_task), NULL);
 
-    osThreadDef(display_task, display_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*2);
+    osThreadDef(display_task, display_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*3);
     displayTaskHandle = osThreadCreate(osThread(display_task), NULL);
 
     osThreadDef(adc_task, adc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*3);
@@ -560,7 +560,7 @@ void display_task(void const * argument){
             info_print();
             break;
         case SAVE_CHANGES:
-            save_page_print();
+            save_page_print(tick);
             break;
         default:
             if(selectedMenuItem->Child_num > 0){
@@ -815,70 +815,110 @@ static void error_page_print(menu_page_t page){
 static void main_page_print(u8 tick){
     char string[50];
 
-    /*
-    // print water tank
-    LCD_fill_area(0,0,50,63,LCD_COLOR_BLACK);
-    LCD_fill_area(1,1,49,62,LCD_COLOR_WHITE);
+    LCD_set_xy(0,47);
+    LCD_print_char(1,&Icon_16x16,LCD_COLOR_BLACK);
 
-    // print values
-    //sprintf(string, "%3.1f%s", dcts_meas[WTR_TMPR].value, dcts_meas[WTR_TMPR].unit_cyr);
-    LCD_set_xy(align_text_center(string, Font_7x10)-38,45);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    //sprintf(string, "%3.1f%s", dcts_meas[WTR_LVL].value, dcts_meas[WTR_LVL].unit_cyr);
-    LCD_set_xy(align_text_center(string, Font_7x10)-38,5);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "Горячая");
-    LCD_set_xy(align_text_center(string, Font_7x10)-38,30);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "вода");
-    LCD_set_xy(align_text_center(string, Font_7x10)-38,20);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    LCD_set_xy(17,47);
+    LCD_print_char(6,&Icon_16x16,LCD_COLOR_BLACK);
 
+    LCD_set_xy(34,47);
+    LCD_print_char(11,&Icon_16x16,LCD_COLOR_BLACK);
 
-    // fill water level
-    high_lev = (uint8_t)(dcts_meas[WTR_LVL].value/vmax*62);
-    if(high_lev > 61){
-        high_lev = 61;
+    LCD_set_xy(0,30);
+    switch(tick%4){
+    case 0:
+        LCD_print_char(2,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 1:
+        LCD_print_char(3,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 2:
+        LCD_print_char(4,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 3:
+        LCD_print_char(5,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
     }
-    LCD_invert_area(1,1,49,high_lev+1);
 
-    sprintf(string, "Предбанник");
-    LCD_set_xy(align_text_center(string, Font_7x10)+27,52);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(52,53,127,63);
-    if(dcts_meas[PREDBANNIK_HUM].valid){
-        sprintf(string, "%.1f%s/%.0f%s", dcts_meas[PREDBANNIK_TMPR].value, dcts_meas[PREDBANNIK_TMPR].unit_cyr, dcts_meas[PREDBANNIK_HUM].value, dcts_meas[PREDBANNIK_HUM].unit_cyr);
-    }else{
-        sprintf(string, "Нет связи");
+    LCD_set_xy(17,30);
+    switch(tick%4){
+    case 0:
+        LCD_print_char(7,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 1:
+        LCD_print_char(8,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 2:
+        LCD_print_char(9,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 3:
+        LCD_print_char(10,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
     }
-    LCD_set_xy(align_text_center(string, Font_7x10)+27,41);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
-    sprintf(string, "Моечная");
-    LCD_set_xy(align_text_center(string, Font_7x10)+27,31);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(52,32,127,42);
-    if(dcts_meas[MOYKA_HUM].valid){
-        sprintf(string, "%.1f%s/%.0f%s", dcts_meas[MOYKA_TMPR].value, dcts_meas[MOYKA_TMPR].unit_cyr, dcts_meas[MOYKA_HUM].value, dcts_meas[MOYKA_HUM].unit_cyr);
-    }else{
-        sprintf(string, "Нет связи");
+    LCD_set_xy(34,30);
+    switch(tick%4){
+    case 0:
+        LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 1:
+        LCD_print_char(13,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 2:
+        LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 3:
+        LCD_print_char(15,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
     }
-    LCD_set_xy(align_text_center(string, Font_7x10)+27,20);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 
-    sprintf(string, "Парная");
-    LCD_set_xy(align_text_center(string, Font_7x10)+27,10);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(52,12,127,21);
-    if(dcts_meas[MOYKA_HUM].valid){
-        sprintf(string, "%.1f%s", dcts_meas[PARILKA_TMPR].value, dcts_meas[PARILKA_TMPR].unit_cyr);
-    }else{
-        sprintf(string, "Нет связи");
+    LCD_set_xy(51,30);
+    switch(tick%4){
+    case 0:
+        LCD_print_char(16,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 1:
+        LCD_print_char(17,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 2:
+        LCD_print_char(18,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 3:
+        LCD_print_char(19,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
     }
-    LCD_set_xy(align_text_center(string, Font_7x10)+27,0);*/
 
-    sprintf(string, "Здесь будет главное окно");
-    LCD_set_xy(2,30);
+    LCD_set_xy(0,13);
+    switch(tick%2){
+    case 0:
+        LCD_print_char(20,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 1:
+        LCD_print_char(21,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    }
+
+    LCD_set_xy(17,13);
+    switch(tick%5){
+    case 0:
+        LCD_print_char(22,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 1:
+        LCD_print_char(23,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 2:
+        LCD_print_char(24,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 3:
+        LCD_print_char(25,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    case 4:
+        LCD_print_char(26,&Icon_16x16,LCD_COLOR_BLACK);
+        break;
+    }
+
+    LCD_set_xy(0,0);
+    sprintf(string,"Здесь будет главное окно");
     LCD_print_ticker(string,&Font_7x10,LCD_COLOR_BLACK,18,tick);
 }
 
@@ -1957,17 +1997,30 @@ static void info_print (void){
 }*/
 
 
-static void save_page_print (void){
+static void save_page_print (u8 tick){
     char string[50];
 
-    LCD_fill_area(5,20,123,48,LCD_COLOR_BLACK);
-    LCD_fill_area(6,21,122,47,LCD_COLOR_WHITE);
+    LCD_fill_area(5,30,123,58,LCD_COLOR_BLACK);
+    LCD_fill_area(6,31,122,57,LCD_COLOR_WHITE);
     sprintf(string, "СОХРАНЕНИЕ НОВЫХ");
-    LCD_set_xy(align_text_center(string, Font_7x10),32);
+    LCD_set_xy(align_text_center(string, Font_7x10),42);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     sprintf(string, "КОЭФФИЦИЕНТОВ");
-    LCD_set_xy(align_text_center(string, Font_7x10),22);
+    LCD_set_xy(align_text_center(string, Font_7x10),32);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
+    LCD_set_xy(55,6);
+    LCD_print_char(1,&Icon_16x16,LCD_COLOR_BLACK);
+    switch(tick%4){
+    case 0:
+        LCD_fill_area(55,10,71,22,LCD_COLOR_WHITE);
+        break;
+    case 1:
+        LCD_fill_area(55,14,71,22,LCD_COLOR_WHITE);
+        break;
+    case 2:
+        LCD_fill_area(55,18,71,22,LCD_COLOR_WHITE);
+        break;
+    }
 }
 
 

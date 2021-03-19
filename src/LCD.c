@@ -461,7 +461,7 @@ int LCD_print_char(char ch, FontDef_t* font, LCD_color_t color){
             if(font->data_size_in_bytes == 1){
                 uint8_t * line_1_byte = font->data;
                 data = (uint16_t)(line_1_byte[(ch - font->shift + 1) * font->FontHeight - line_num] << 8);
-            }else if(sizeof(font->data) == 2){
+            }else if(font->data_size_in_bytes == 2){
                 uint16_t * line_2_byte = font->data;
                 data = line_2_byte[(ch - font->shift + 1) * font->FontHeight - line_num];
             }
