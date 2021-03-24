@@ -86,6 +86,12 @@
 #define ACT_NUM 5
 #define RELE_NUM 6
 #define SAVED_PARAMS_SIZE 39
+#if(STM32F103xB == 1)
+#define BKP_REG_NUM 10
+#elif(STM32F103x8 == 1)
+#define BKP_REG_NUM 5
+#endif
+
 
 #if(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE/2)
     #error(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)
@@ -265,6 +271,16 @@ typedef struct{
     uint32_t pwm_channel;
 }in_channel_t;
 
+typedef union{
+    uint8_t u8_data[BKP_REG_NUM*2];
+    uint16_t u16_data[BKP_REG_NUM];
+}bkp_data_t;
+
+typedef enum{
+    BKP_DATA_U8 = 0,
+    BKP_DATA_U16,
+}bkp_data_type;
+
 void _Error_Handler(char *, int);
 extern uint32_t us_cnt_H;
 extern navigation_t navigation_style;
@@ -285,6 +301,7 @@ extern saved_to_flash_t config;
 extern const ch_t do_ch[];
 extern const ch_t ch[];
 extern in_channel_t input_ch[];
+extern bkp_data_t *bkp_data_p;
 
 void display_task(void const * argument);
 void am2302_task(void const * argument);

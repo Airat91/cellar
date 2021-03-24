@@ -74,6 +74,7 @@
 #define RELEASE 0
 #define DO_NUM 6
 #define IN_CHANNEL_NUM 8
+#define RTC_KEY 0xABCD
 
 /* Private variables ---------------------------------------------------------*/
 RTC_HandleTypeDef hrtc;
@@ -88,7 +89,6 @@ osThreadId adcTaskHandle;
 osThreadId am2302TaskHandle;
 osThreadId navigationtTaskHandle;
 osThreadId uartTaskHandle;
-
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -119,10 +119,10 @@ static void print_enter_ok(void);
 static void print_change(void);
 static void save_params(void);
 static void restore_params(void);
-static void save_to_bkp(u8 bkp_num, u8 var);
-static void save_float_to_bkp(u8 bkp_num, float var);
-static u8 read_bkp(u8 bkp_num);
-static float read_float_bkp(u8 bkp_num, u8 sign);
+static void save_to_bkp(u8 bkp_num, uint16_t var);
+//static void save_float_to_bkp(u8 bkp_num, float var);
+static uint16_t read_bkp(u8 bkp_num);
+//static float read_float_bkp(u8 bkp_num, u8 sign);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
@@ -130,6 +130,7 @@ uint32_t us_cnt_H = 0;
 navigation_t navigation_style = MENU_NAVIGATION;
 edit_val_t edit_val = {0};
 saved_to_flash_t config;
+//bkp_data_t * bkp_data_p;
 static const uart_bitrate_t bitrate_array[14] = {
     BITRATE_600,
     BITRATE_1200,
@@ -262,7 +263,13 @@ void dcts_init (void) {
     dcts.dcts_rtc.hour = 12;
     dcts.dcts_rtc.minute = 0;
     dcts.dcts_rtc.second = 0;
-    dcts.dcts_rtc.state = RTC_STATE_SET;
+    /*uint16_t read = read_bkp(0);
+    if(read == RTC_KEY){
+        dcts.dcts_rtc.state = RTC_STATE_READY;
+    }else{
+        save_to_bkp(0, RTC_KEY);
+        dcts.dcts_rtc.state = RTC_STATE_SET;
+    }*/
     dcts.dcts_pwr = 0.0f;
     dcts.dcts_meas_num = MEAS_NUM;
     dcts.dcts_rele_num = RELE_NUM;
@@ -383,6 +390,13 @@ static void RTC_Init(void){
         _Error_Handler(__FILE__, __LINE__);
     }
 
+    uint16_t read = read_bkp(0);
+    if(read == RTC_KEY){
+        dcts.dcts_rtc.state = RTC_STATE_READY;
+    }else{
+        save_to_bkp(0, RTC_KEY);
+        dcts.dcts_rtc.state = RTC_STATE_SET;
+    }
     if(dcts.dcts_rtc.state == RTC_STATE_SET){
         Time.Hours = dcts.dcts_rtc.hour;
         Time.Minutes = dcts.dcts_rtc.minute;
@@ -2731,56 +2745,57 @@ static void restore_params(void){
     }
 }
 
-static void save_to_bkp(u8 bkp_num, u8 var){
+static void save_to_bkp(u8 bkp_num, uint16_t var){
     uint32_t data = var;
-    if(bkp_num%2 == 1){
+    /*if(bkp_num%2 == 1){
         data = data << 8;
-    }
+    }*/
     HAL_PWR_EnableBkUpAccess();
-    switch (bkp_num / 2){
+    switch (bkp_num){
     case 0:
-        BKP->DR1 |= data;
+        BKP->DR1 = data;
         break;
     case 1:
-        BKP->DR2 |= data;
+        BKP->DR2 = data;
         break;
     case 2:
-        BKP->DR3 |= data;
+        BKP->DR3 = data;
         break;
     case 3:
-        BKP->DR4 |= data;
+        BKP->DR4 = data;
         break;
     case 4:
-        BKP->DR5 |= data;
+        BKP->DR5 = data;
         break;
     case 5:
-        BKP->DR6 |= data;
+        BKP->DR6 = data;
         break;
     case 6:
-        BKP->DR7 |= data;
+        BKP->DR7 = data;
         break;
     case 7:
-        BKP->DR8 |= data;
+        BKP->DR8 = data;
         break;
     case 8:
-        BKP->DR9 |= data;
+        BKP->DR9 = data;
         break;
     case 9:
-        BKP->DR10 |= data;
+        BKP->DR10 = data;
         break;
     }
     HAL_PWR_DisableBkUpAccess();
 }
 
-static void save_float_to_bkp(u8 bkp_num, float var){
+/*static void save_float_to_bkp(u8 bkp_num, float var){
     char buf[5] = {0};
     sprintf(buf, "%4.0f", (double)var);
     u8 data = (u8)atoi(buf);
     save_to_bkp(bkp_num, data);
-}
-static u8 read_bkp(u8 bkp_num){
+}*/
+
+static uint16_t read_bkp(u8 bkp_num){
     uint32_t data = 0;
-    switch (bkp_num/2){
+    switch (bkp_num){
     case 0:
         data = BKP->DR1;
         break;
@@ -2815,7 +2830,7 @@ static u8 read_bkp(u8 bkp_num){
     if(bkp_num%2 == 1){
         data = data >> 8;
     }
-    return (u8)(data & 0xFF);
+    return (uint16_t)(data & 0xFFFF);
 }
 /*static float read_float_bkp(u8 bkp_num, u8 sign){
     u8 data = read_bkp(bkp_num);

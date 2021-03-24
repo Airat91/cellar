@@ -173,11 +173,11 @@ void adc_task(void const * argument){
 
         dcts_meas[WTR_MIN_ADC].value = (float)wtr_min_sum/ADC_BUF_SIZE;
         dcts_meas[WTR_MIN_VLT].value = dcts_meas[WTR_MIN_ADC].value*ADC_VREF/ADC_MAX;
-        dcts_meas[WTR_MIN_RES].value = (ADC_VREF -  dcts_meas[WTR_MIN_VLT].value)*INPUT_RES/dcts_meas[WTR_MIN_VLT].value;
+        dcts_meas[WTR_MIN_RES].value = (ADC_VREF -  dcts_meas[WTR_MIN_VLT].value)*dcts_meas[WTR_MIN_VLT].value/INPUT_RES;
 
         dcts_meas[WTR_MAX_ADC].value = (float)wtr_max_sum/ADC_BUF_SIZE;
         dcts_meas[WTR_MAX_VLT].value = dcts_meas[WTR_MAX_ADC].value*ADC_VREF/ADC_MAX;
-        dcts_meas[WTR_MAX_RES].value = (ADC_VREF -  dcts_meas[WTR_MAX_VLT].value)*INPUT_RES/dcts_meas[WTR_MAX_VLT].value;
+        dcts_meas[WTR_MAX_RES].value = (ADC_VREF -  dcts_meas[WTR_MAX_VLT].value)*dcts_meas[WTR_MAX_VLT].value/INPUT_RES;
 
         dcts_meas[VREF_ADC].value = (float)vref_sum/ADC_BUF_SIZE;
 
