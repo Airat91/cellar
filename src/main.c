@@ -233,9 +233,9 @@ int main(void){
     osThreadDef(navigation_task, navigation_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     navigationtTaskHandle = osThreadCreate(osThread(navigation_task), NULL);
 
-    /*osThreadDef(uart_task, uart_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*4);
+    osThreadDef(uart_task, uart_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*4);
     uartTaskHandle = osThreadCreate(osThread(uart_task), NULL);
-*/
+
 
     osThreadDef(control_task, control_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*2);
     controlTaskHandle = osThreadCreate(osThread(control_task), NULL);
@@ -1406,6 +1406,7 @@ static int get_param_value(char* string, menu_page_t page){
 
     case LIGHT_LVL:
         sprintf(string, "%d%%", LCD.backlight_lvl*10);
+        LCD_backlight_timer_init();
         break;
     case AUTO_OFF:
         sprintf(string, "%dñ", LCD.auto_off*10);
@@ -1804,8 +1805,8 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit_max = 1;
         edit_val.digit_min = 0;
         edit_val.digit = 0;
-        edit_val.val_min.uint16 = 0;
-        edit_val.val_max.uint16 = 10;
+        edit_val.val_min.uint16 = 1;
+        edit_val.val_max.uint16 = 60;
         edit_val.p_val.p_uint16 = &LCD.auto_off;
         edit_val.select_shift = 2;
         edit_val.select_width = Font_7x10.FontWidth;
