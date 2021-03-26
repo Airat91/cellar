@@ -1787,7 +1787,7 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit_max = 1;
         edit_val.digit_min = 0;
         edit_val.digit = 0;
-        edit_val.val_min.uint16 = 0;
+        edit_val.val_min.uint16 = 1;
         edit_val.val_max.uint16 = 10;
         edit_val.p_val.p_uint16 = &LCD.backlight_lvl;
         edit_val.select_shift = 2;
@@ -2416,7 +2416,7 @@ void uart_task(void const * argument){
                 if(i == MEAS_NUM - 1){
                     strncat(string,"\n",1);
                 }
-                //uart_send(string,(uint16_t)strlen(string));
+                uart_send(string,(uint16_t)strlen(string));
             }
         }else{
             tick++;

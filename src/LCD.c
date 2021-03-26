@@ -641,12 +641,11 @@ void LCD_backlight_pin_off_state(void){
 
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Pin = LCD_LIGHT_PIN;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(LCD_LIGHT_PORT, &GPIO_InitStruct);
-    HAL_GPIO_WritePin(LCD_LIGHT_PORT,LCD_LIGHT_PIN,GPIO_PIN_SET);
 }
 
 /**
