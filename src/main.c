@@ -80,6 +80,7 @@
 RTC_HandleTypeDef hrtc;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+IWDG_HandleTypeDef hiwdg;
 osThreadId rtcTaskHandle;
 osThreadId buttonsTaskHandle;
 osThreadId displayTaskHandle;
@@ -299,7 +300,7 @@ void dcts_init (void) {
 
     dcts_act_channel_init(VALVE_IN, "Valve IN", "Клапан приточный", "%", "%");
     dcts_act_channel_init(VALVE_OUT, "Valve OUT", "Клапан вытяжной", "%", "%");
-    dcts_act_channel_init(TMPR_IN, "Tmpr IN", "Температура", "°C", "°C");
+    dcts_act_channel_init(TMPR_IN_HEATING, "Tmpr IN heating", "Температура нагрев", "°C", "°C");
     dcts_act_channel_init(HUM_IN, "Hum IN", "Влажность", "%", "%");
 
     //rele_channels
@@ -545,17 +546,18 @@ void rtc_task(void const * argument){
  * @brief display_task
  * @param argument
  */
-#define display_task_period 500
+#define display_task_period 50
 void display_task(void const * argument){
     (void)argument;
     menu_init();
     LCD_init();
     u8 tick = 0;
+    u8 tick_2 = 0;
     menu_page_t last_page = selectedMenuItem->Page;
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
 #if RELEASE
-        HAL_IWDG_Refresh();
+        HAL_IWDG_Refresh(&hiwdg);
 #endif //RELEASE
         LCD_clr();
         if(last_page != selectedMenuItem->Page){
@@ -588,7 +590,11 @@ void display_task(void const * argument){
                 LCD_backlight_shutdown();
             }
         }
-        tick++;
+        if(tick_2 == 500/display_task_period){
+            tick_2 = 0;
+            tick++;
+        }
+        tick_2++;
         osDelayUntil(&last_wake_time, display_task_period);
     }
 }
@@ -1158,10 +1164,10 @@ static void main_page_print(u8 tick){
 
     //temperature and hummidity in
     if(dcts_meas[TMPR_IN_AVG].valid == 1){
-        if(dcts_act[TMPR_IN].state.control == 1){
-            sprintf(string,"T %.1f%s (%.1f%s)",(double)dcts_act[TMPR_IN].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr,(double)dcts_act[TMPR_IN].set_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+        if(dcts_act[TMPR_IN_HEATING].state.control == 1){
+            sprintf(string,"T %.1f%s (%.1f%s)",(double)dcts_act[TMPR_IN_HEATING].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr,(double)dcts_act[TMPR_IN_HEATING].set_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
         }else{
-            sprintf(string,"T %.1f%s",(double)dcts_act[TMPR_IN].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+            sprintf(string,"T %.1f%s",(double)dcts_act[TMPR_IN_HEATING].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
         }
     }else{
         sprintf(string,"Обрыв  обоих  ");
@@ -1474,7 +1480,7 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
-        edit_val.p_val.p_uint8 = &dcts_act[TMPR_IN].state.control;
+        edit_val.p_val.p_uint8 = &dcts_act[TMPR_IN_HEATING].state.control;
         edit_val.select_shift = 0;
         edit_val.select_width = Font_7x10.FontWidth*5;
         break;
@@ -1529,7 +1535,7 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit = 0;
         edit_val.val_min.vfloat = 0.0;
         edit_val.val_max.vfloat = 100.0;
-        edit_val.p_val.p_float = &dcts_act[TMPR_IN].set_value;
+        edit_val.p_val.p_float = &dcts_act[TMPR_IN_HEATING].set_value;
         edit_val.select_shift = 4;
         edit_val.select_width = Font_7x10.FontWidth;
         break;
@@ -1584,7 +1590,7 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit = 0;
         edit_val.val_min.vfloat = 0.0;
         edit_val.val_max.vfloat = 100.0;
-        edit_val.p_val.p_float = &dcts_act[TMPR_IN].hysteresis;
+        edit_val.p_val.p_float = &dcts_act[TMPR_IN_HEATING].hysteresis;
         edit_val.select_shift = 4;
         edit_val.select_width = Font_7x10.FontWidth;
         break;
@@ -2450,38 +2456,57 @@ void control_task(void const * argument){
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     static pump_st_t pump_state = PUMP_EMPTY;
+    static t_heat_t t_heat = T_HEAT_HEATING;
     channels_init();
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
+
+        // input valve
         if(dcts_act[VALVE_IN].state.control){
-            //
+
         }
+
+        // output valve
         if(dcts_act[VALVE_OUT].state.control){
-            //
+
         }
-        if(dcts_act[TMPR_IN].state.control){
-            /*if(dcts_meas[TMPR_IN_AVG].valid){
-                dcts_act[TMPR_IN].meas_value = dcts_meas[TMPR_IN_AVG].value;
 
-                if((dcts_act[TMPR_IN].meas_value < (dcts_act[TMPR_IN].set_value + 0.5f*dcts_act[TMPR_IN].hysteresis))&&
-                        (dcts_rele[HEATER].state.control == 0)){
-                    dcts_act[TMPR_IN].state.pin_state = 0;
+        // temperature in (heating)
+        if(dcts_act[TMPR_IN_HEATING].state.control){
+            if(dcts_meas[TMPR_IN_AVG].valid){
+                dcts_act[TMPR_IN_HEATING].meas_value = dcts_meas[TMPR_IN_AVG].value;
 
+                switch(t_heat){
+                case T_HEAT_HEATING:
+                    dcts_act[TMPR_IN_HEATING].state.pin_state = 1;
+                    if(dcts_act[TMPR_IN_HEATING].meas_value >= (dcts_act[TMPR_IN_HEATING].set_value + 0.5f*dcts_act[TMPR_IN_HEATING].hysteresis)){
+                        t_heat = T_HEAT_COOLING;
+                    }
+                    break;
+                case T_HEAT_COOLING:
+                    dcts_act[TMPR_IN_HEATING].state.pin_state = 0;
+                    if(dcts_act[TMPR_IN_HEATING].meas_value <= (dcts_act[TMPR_IN_HEATING].set_value - 0.5f*dcts_act[TMPR_IN_HEATING].hysteresis)){
+                        t_heat = T_HEAT_HEATING;
+                    }
+                    break;
                 }
-
             }else{
                 // current value unknown
-                dcts_act[TMPR_IN].state.pin_state = 0;
+                dcts_act[TMPR_IN_HEATING].state.pin_state = 0;
             }
             // set rele_control if control_by_act enable
             if(dcts_rele[HEATER].state.control_by_act == 1){
-                if(dcts_rele[HEATER].state.control != dcts_act[TMPR_IN].state.pin_state)
-                dcts_rele[HEATER].state.control = dcts_act[TMPR_IN].state.pin_state;
-            }*/
+                if(dcts_rele[HEATER].state.control != dcts_act[TMPR_IN_HEATING].state.pin_state)
+                dcts_rele[HEATER].state.control = dcts_act[TMPR_IN_HEATING].state.pin_state;
+            }
         }
+
+        // hummidity in
         if(dcts_act[HUM_IN].state.control){
 
         }
+
+        // water pump
         if(dcts_act[AUTO_PUMP].state.control){
             switch(pump_state){
             case PUMP_EMPTY:
@@ -2916,6 +2941,17 @@ static void channels_init(void){
         default:
             ;
         }
+    }
+}
+
+static void MX_IWDG_Init(void){
+
+    hiwdg.Instance = IWDG;
+    hiwdg.Init.Prescaler = IWDG_PRESCALER_128;
+    hiwdg.Init.Reload = 3124;   //10sec
+    if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+    {
+      Error_Handler();
     }
 }
 

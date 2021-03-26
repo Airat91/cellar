@@ -139,7 +139,7 @@
  typedef enum {
      VALVE_IN = 0,
      VALVE_OUT,
-     TMPR_IN,
+     TMPR_IN_HEATING,
      HUM_IN,
      AUTO_PUMP,
  }dcts_act_t;
@@ -257,6 +257,11 @@ typedef enum{
     PUMP_ACTIVE,
 }pump_st_t;
 
+typedef enum{
+    T_HEAT_HEATING = 0,
+    T_HEAT_COOLING,
+}t_heat_t;
+
 typedef struct{
     ch_mode_t mode;
     GPIO_TypeDef * port;
@@ -298,6 +303,7 @@ extern const ch_t do_ch[];
 extern const ch_t ch[];
 extern in_channel_t input_ch[];
 extern bkp_data_t *bkp_data_p;
+extern IWDG_HandleTypeDef hiwdg;
 
 void display_task(void const * argument);
 void am2302_task(void const * argument);
