@@ -292,7 +292,7 @@ void dcts_init (void) {
     dcts_meas_channel_init(WTR_MAX_RES, "Water max res", "Ниж. уровень сопр.", "Ohm", "Ом");
     dcts_meas_channel_init(WTR_MAX_ADC, "Water max ADC", "Ниж. уровень АЦП", "adc", "adc");
     dcts_meas_channel_init(WTR_MAX_VLT, "Water max V", "Ниж. уровень В", "V", "В");
-    dcts_meas_channel_init(VREF_ADC, "Vref ADC", "Опорное напр. АЦП", "adc", "adc");
+    dcts_meas_channel_init(VREF_VLT, "Vref V", "Опорное напр. В", "V", "В");
     dcts_meas_channel_init(VBAT_VLT, "RTC battery V", "Батарейка В", "V", "В");
 
     //act_channels
@@ -1030,10 +1030,18 @@ static void main_page_print(u8 tick){
 
     // temperature and hummidity out
     LCD_set_xy(0,56);
-    sprintf(string,"%.1f%s",(double)dcts_meas[TMPR_OUT].value,dcts_meas[TMPR_OUT].unit_cyr);
+    if(dcts_meas[TMPR_OUT].valid == 1){
+        sprintf(string,"%.1f%s",(double)dcts_meas[TMPR_OUT].value,dcts_meas[TMPR_OUT].unit_cyr);
+    }else{
+        sprintf(string,"Обрыв");
+    }
     LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
     LCD_set_xy(0,48);
-    sprintf(string,"%.1f%s",(double)dcts_meas[HUM_OUT].value,dcts_meas[HUM_OUT].unit_cyr);
+    if(dcts_meas[HUM_OUT].valid == 1){
+        sprintf(string,"%.1f%s",(double)dcts_meas[HUM_OUT].value,dcts_meas[HUM_OUT].unit_cyr);
+    }else{
+        sprintf(string,"датчика");
+    }
     LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
 
     //fan in
@@ -1149,18 +1157,26 @@ static void main_page_print(u8 tick){
     }
 
     //temperature and hummidity in
-    if(dcts_act[TMPR_IN].state.control == 1){
-        sprintf(string,"T %.1f%s (%.1f%s)",(double)dcts_act[TMPR_IN].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr,(double)dcts_act[TMPR_IN].set_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+    if(dcts_meas[TMPR_IN_AVG].valid == 1){
+        if(dcts_act[TMPR_IN].state.control == 1){
+            sprintf(string,"T %.1f%s (%.1f%s)",(double)dcts_act[TMPR_IN].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr,(double)dcts_act[TMPR_IN].set_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+        }else{
+            sprintf(string,"T %.1f%s",(double)dcts_act[TMPR_IN].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+        }
     }else{
-        sprintf(string,"T %.1f%s",(double)dcts_act[TMPR_IN].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+        sprintf(string,"Обрыв  обоих  ");
     }
     LCD_set_xy(align_text_right(string,Font_5x7)-36,7);
     LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
 
-    if(dcts_act[HUM_IN].state.control == 1){
-        sprintf(string,"Rh %.1f%s (%.1f%s)",(double)dcts_act[HUM_IN].meas_value,dcts_meas[HUM_IN_AVG].unit_cyr,(double)dcts_act[HUM_IN].set_value,dcts_meas[HUM_IN_AVG].unit_cyr);
+    if(dcts_meas[HUM_IN_AVG].valid == 1){
+        if(dcts_act[HUM_IN].state.control == 1){
+            sprintf(string,"Rh %.1f%s (%.1f%s)",(double)dcts_act[HUM_IN].meas_value,dcts_meas[HUM_IN_AVG].unit_cyr,(double)dcts_act[HUM_IN].set_value,dcts_meas[HUM_IN_AVG].unit_cyr);
+        }else{
+            sprintf(string,"Rh %.1f%s",(double)dcts_act[HUM_IN].meas_value,dcts_meas[HUM_IN_AVG].unit_cyr);
+        }
     }else{
-        sprintf(string,"Rh %.1f%s",(double)dcts_act[HUM_IN].meas_value,dcts_meas[HUM_IN_AVG].unit_cyr);
+        sprintf(string,"датчиков    ");
     }
     LCD_set_xy(align_text_right(string,Font_5x7)-36,0);
     LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);

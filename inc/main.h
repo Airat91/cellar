@@ -132,7 +132,7 @@
      WTR_MAX_RES,
      WTR_MAX_ADC,
      WTR_MAX_VLT,
-     VREF_ADC,
+     VREF_VLT,
      VBAT_VLT,
  }dcts_meas_t;
 

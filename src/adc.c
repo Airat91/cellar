@@ -129,8 +129,6 @@ void adc_gpio_init (void){
  */
 void adc_gpio_deinit (void){
     HAL_GPIO_DeInit(PWR_PORT,PWR_PIN);
-    //HAL_GPIO_DeInit(WTR_LEV_PORT,WTR_LEV_PIN);
-    //HAL_GPIO_DeInit(WTR_TMP_PORT,WTR_TMP_PIN);
 }
 /**
  * @brief Measure ADC channels and write values to DCTS
@@ -166,7 +164,6 @@ void adc_task(void const * argument){
             wtr_min_sum += wtr_min[i];
             wtr_max_sum += wtr_max[i];
             vref_sum += vref[i];
-            //pwr_f_sum += pwr_f[i];
         }
 
         temp = (float)pwr_sum/ADC_BUF_SIZE;
@@ -181,7 +178,7 @@ void adc_task(void const * argument){
         dcts_meas[WTR_MAX_VLT].value = dcts_meas[WTR_MAX_ADC].value*v_3_3/ADC_MAX;
         dcts_meas[WTR_MAX_RES].value = dcts_meas[WTR_MAX_VLT].value*INPUT_RES/(v_3_3 -  dcts_meas[WTR_MAX_VLT].value);
 
-        dcts_meas[VREF_ADC].value = v_3_3;//(float)vref_sum/ADC_BUF_SIZE;
+        dcts_meas[VREF_VLT].value = v_3_3;
 
         dcts_meas[WTR_MIN_ADC].valid = TRUE;
         dcts_meas[WTR_MIN_VLT].valid = TRUE;
@@ -189,7 +186,7 @@ void adc_task(void const * argument){
         dcts_meas[WTR_MAX_ADC].valid = TRUE;
         dcts_meas[WTR_MAX_VLT].valid = TRUE;
         dcts_meas[WTR_MAX_RES].valid = TRUE;
-        dcts_meas[VREF_ADC].valid = TRUE;
+        dcts_meas[VREF_VLT].valid = TRUE;
         taskEXIT_CRITICAL();
 
         tick++;
@@ -198,48 +195,4 @@ void adc_task(void const * argument){
         }
         osDelayUntil(&last_wake_time, ADC_PERIOD);
     }
-}
-
-float adc_tmpr_calc(float adc){
-    float tmpr = 0.0f;
-    float a = 1.0f;
-    float b = 0.0f;
-    /*for(uint8_t i = 0; i < 10; i++){
-        if((adc <= config.params.tmpr_calib_table[i])&&(adc > config.params.tmpr_calib_table[i+1])){
-            a = 10.0f/(config.params.tmpr_calib_table[i+1]-config.params.tmpr_calib_table[i]);
-            b = 10.0f*i - a*config.params.tmpr_calib_table[i];
-        }
-    }
-    if(adc > config.params.tmpr_calib_table[0]){
-        a = 10.0f/(config.params.tmpr_calib_table[1]-config.params.tmpr_calib_table[0]);
-        b = 0.0f - a*config.params.tmpr_calib_table[0];
-    }
-    if(adc <= config.params.tmpr_calib_table[10]){
-        a = 10.0f/(config.params.tmpr_calib_table[10]-config.params.tmpr_calib_table[9]);
-        b = 100.0f - a*config.params.tmpr_calib_table[10];
-    }*/
-    tmpr = a*adc + b;
-    return tmpr;
-}
-
-float adc_lvl_calc(float adc){
-    float tmpr = 0.0f;
-    float a = 1.0f;
-    float b = 0.0f;
-    /*for(uint8_t i = 0; i < 5; i++){
-        if((adc >= config.params.lvl_calib_table[i])&&(adc < config.params.lvl_calib_table[i+1])){
-            a = 20.0f/(config.params.lvl_calib_table[i+1]-config.params.lvl_calib_table[i]);
-            b = 20.0f*i - a*config.params.lvl_calib_table[i];
-        }
-    }
-    if(adc < config.params.lvl_calib_table[0]){
-        a = 20.0f/(config.params.lvl_calib_table[1]-config.params.lvl_calib_table[0]);
-        b = 0.0f - a*config.params.lvl_calib_table[0];
-    }
-    if(adc >= config.params.lvl_calib_table[5]){
-        a = 20.0f/(config.params.lvl_calib_table[5]-config.params.lvl_calib_table[4]);
-        b = 100.0f - a*config.params.lvl_calib_table[5];
-    }*/
-    tmpr = a*adc + b;
-    return tmpr;
 }
