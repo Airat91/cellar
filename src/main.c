@@ -206,7 +206,7 @@ int main(void){
 
     HAL_Init();
     SystemClock_Config();
-    channels_init();
+    //channels_init();
     tim2_init();
     dcts_init();
     restore_params();
@@ -286,16 +286,12 @@ void dcts_init (void) {
     dcts_meas_channel_init(HUM_IN_AVG, "Hum avg", "Влажность усред.", "%", "%");
     dcts_meas_channel_init(TMPR_OUT, "Tmpr out", "Температура снаружи", "°C", "°C");
     dcts_meas_channel_init(HUM_OUT, "Hum out", "Влажность снаружи", "%", "%");
-    dcts_meas_channel_init(WTRL_LVL_HIGH_ADC, "Drain high ADC", "Дренаж верх АЦП", "adc", "adc");
-    dcts_meas_channel_init(WTRL_LVL_HIGH_VLT, "Drain high V", "Дренаж верх В", "V", "В");
-    dcts_meas_channel_init(WTRL_LVL_LOW_ADC, "Drain low ADC", "Дренаж низ АЦП", "adc", "adc");
-    dcts_meas_channel_init(WTRL_LVL_LOW_VLT, "Drain low V", "Дренаж низ В", "V", "В");
-    dcts_meas_channel_init(WTR_MIN_RES, "Valve IN degree", "Клапан приточ. угол", "°", "°");
-    dcts_meas_channel_init(WTR_MIN_ADC, "Valve IN ADC", "Клапан приточ. АЦП", "adc", "adc");
-    dcts_meas_channel_init(WTR_MIN_VLT, "Valve IN V", "Клапан приточ. В", "V", "В");
-    dcts_meas_channel_init(WTR_MAX_RES, "Valve OUT degree", "Клапан вытяжной угол", "°", "°");
-    dcts_meas_channel_init(WTR_MAX_ADC, "Valve OUT ADC", "Клапан вытяжной АЦП", "adc", "adc");
-    dcts_meas_channel_init(WTR_MAX_VLT, "Valve OUT V", "Клапан вытяжной В", "V", "В");
+    dcts_meas_channel_init(WTR_MIN_RES, "Water min res", "Верх. уровень сопр.", "Ohm", "Ом");
+    dcts_meas_channel_init(WTR_MIN_ADC, "Water min ADC", "Верх. уровень АЦП", "adc", "adc");
+    dcts_meas_channel_init(WTR_MIN_VLT, "Water min V", "Верх. уровень В", "V", "В");
+    dcts_meas_channel_init(WTR_MAX_RES, "Water max res", "Ниж. уровень сопр.", "Ohm", "Ом");
+    dcts_meas_channel_init(WTR_MAX_ADC, "Water max ADC", "Ниж. уровень АЦП", "adc", "adc");
+    dcts_meas_channel_init(WTR_MAX_VLT, "Water max V", "Ниж. уровень В", "V", "В");
     dcts_meas_channel_init(VREF_ADC, "Vref ADC", "Опорное напр. АЦП", "adc", "adc");
     dcts_meas_channel_init(VBAT_VLT, "RTC battery V", "Батарейка В", "V", "В");
 
@@ -1313,10 +1309,6 @@ static int get_param_value(char* string, menu_page_t page){
     case MEAS_CH_13:
     case MEAS_CH_14:
     case MEAS_CH_15:
-    case MEAS_CH_16:
-    case MEAS_CH_17:
-    case MEAS_CH_18:
-    case MEAS_CH_19:
         sprintf(string, "%.1f", (double)dcts_meas[(uint8_t)(page - MEAS_CH_0)].value);//, dcts_meas[(uint8_t)(page - MEAS_CH_0)].unit_cyr);
         if(dcts_meas[(uint8_t)(page - MEAS_CH_0)].valid == 1){
             result = -1;

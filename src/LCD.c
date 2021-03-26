@@ -57,9 +57,9 @@ int LCD_init (void){
     HAL_Delay(2);
     LCD_send(LCD_RW_WRITE, LCD_RS_COMM, 0x36);
 
-    LCD_clr();
+    /*LCD_clr();
     LCD_backlight_on();
-    /*LCD_set_xy(0,63-7*1);
+    LCD_set_xy(0,63-7*1);
     LCD_print("ABCDEFGHIJKLMNOPQRSTUVWXY", &Font_5x7, LCD_COLOR_BLACK);
     LCD_set_xy(0,63-7*2);
     LCD_print("abcdefghijklmnopqrstuvwxy", &Font_5x7, LCD_COLOR_BLACK);

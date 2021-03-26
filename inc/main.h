@@ -82,7 +82,7 @@
 #define STEP_OUT2_2 LL_GPIO_PIN_12
 #define STEP_PORT GPIOB
 
-#define MEAS_NUM 20
+#define MEAS_NUM 16
 #define ACT_NUM 5
 #define RELE_NUM 6
 #define SAVED_PARAMS_SIZE 39
@@ -126,10 +126,6 @@
      HUM_IN_AVG,
      TMPR_OUT,
      HUM_OUT,
-     WTRL_LVL_HIGH_ADC,
-     WTRL_LVL_HIGH_VLT,
-     WTRL_LVL_LOW_ADC,
-     WTRL_LVL_LOW_VLT,
      WTR_MIN_RES,
      WTR_MIN_ADC,
      WTR_MIN_VLT,
