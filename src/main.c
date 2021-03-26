@@ -1399,6 +1399,7 @@ static int get_param_value(char* string, menu_page_t page){
     case LIGHT_LVL:
         sprintf(string, "%d%%", LCD.backlight_lvl*10);
         LCD_backlight_timer_init();
+        LCD_backlight_on();
         break;
     case AUTO_OFF:
         sprintf(string, "%dñ", LCD.auto_off*10);
@@ -2415,7 +2416,7 @@ void uart_task(void const * argument){
                 if(i == MEAS_NUM - 1){
                     strncat(string,"\n",1);
                 }
-                uart_send(string,(uint16_t)strlen(string));
+                //uart_send(string,(uint16_t)strlen(string));
             }
         }else{
             tick++;
@@ -2663,6 +2664,9 @@ static void save_params(void){
     // store ModBus params
     config.params.mdb_address = dcts.dcts_address;
     config.params.mdb_bitrate = (uint16_t)bitrate_array[bitrate_array_pointer];
+    // store display params
+    config.params.lcd_backlight_lvl = LCD.backlight_lvl;
+    config.params.lcd_backlight_time = LCD.auto_off;
     // store dcts_act
     for(uint8_t i = 0; i < ACT_NUM; i++){
         config.params.act_set[i] = dcts_act[i].set_value;
