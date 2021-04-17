@@ -80,6 +80,7 @@
 RTC_HandleTypeDef hrtc;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef hpwmtim;
 IWDG_HandleTypeDef hiwdg;
 osThreadId rtcTaskHandle;
 osThreadId buttonsTaskHandle;
@@ -124,6 +125,8 @@ static void save_to_bkp(u8 bkp_num, uint16_t var);
 //static void save_float_to_bkp(u8 bkp_num, float var);
 static uint16_t read_bkp(u8 bkp_num);
 //static float read_float_bkp(u8 bkp_num, u8 sign);
+static int channel_PWM_timer_init(u8 channel);
+static int channel_PWM_duty_set(u8 channel, u16 duty);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
@@ -167,17 +170,17 @@ static const char ch_mode_descr[6][10] = {
 };
 
 in_channel_t input_ch[8] = {
-    {.mode = CH_MODE_ADC,   .port = CH_0_PORT, .pin = CH_0_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_0, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_1},
-    {.mode = CH_MODE_ADC,   .port = CH_1_PORT, .pin = CH_1_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_1, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_2},
-    {.mode = CH_MODE_AM3202,.port = CH_2_PORT, .pin = CH_2_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_2, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_3},
-    {.mode = CH_MODE_AM3202,.port = CH_3_PORT, .pin = CH_3_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_3, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_4},
-    {.mode = CH_MODE_AM3202,.port = CH_4_PORT, .pin = CH_4_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_6, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_1},
-    {.mode = CH_MODE_PWM,   .port = CH_5_PORT, .pin = CH_5_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_7, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_2},
-    {.mode = CH_MODE_PWM,   .port = CH_6_PORT, .pin = CH_6_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_8, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_3},
-    {.mode = CH_MODE_NONE,  .port = CH_7_PORT, .pin = CH_7_PORT, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_9, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_4},
+    {.mode = CH_MODE_ADC,   .port = CH_0_PORT, .pin = CH_0_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_0, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_1},
+    {.mode = CH_MODE_ADC,   .port = CH_1_PORT, .pin = CH_1_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_1, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_2},
+    {.mode = CH_MODE_AM3202,.port = CH_2_PORT, .pin = CH_2_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_2, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_3},
+    {.mode = CH_MODE_AM3202,.port = CH_3_PORT, .pin = CH_3_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_3, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_4},
+    {.mode = CH_MODE_AM3202,.port = CH_4_PORT, .pin = CH_4_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_6, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_1},
+    {.mode = CH_MODE_PWM,   .port = CH_5_PORT, .pin = CH_5_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_7, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_2},
+    {.mode = CH_MODE_PWM,   .port = CH_6_PORT, .pin = CH_6_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_8, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_3},
+    {.mode = CH_MODE_NONE,  .port = CH_7_PORT, .pin = CH_7_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_9, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_4},
 };
 
-const ch_t ch[8] = {
+/*const ch_t ch[8] = {
     {.pin = CH_0_PIN, .port = CH_0_PORT},
     {.pin = CH_1_PIN, .port = CH_1_PORT},
     {.pin = CH_2_PIN, .port = CH_2_PORT},
@@ -186,7 +189,7 @@ const ch_t ch[8] = {
     {.pin = CH_5_PIN, .port = CH_5_PORT},
     {.pin = CH_6_PIN, .port = CH_6_PORT},
     {.pin = CH_7_PIN, .port = CH_7_PORT},
-};
+};*/
 
 const ch_t do_ch[6] = {
     {.pin = DO_0_PIN, .port = DO_0_PORT},
@@ -301,6 +304,7 @@ void dcts_init (void) {
     dcts_act_channel_init(VALVE_IN, "Valve IN", "Клапан приточный", "%", "%");
     dcts_act_channel_init(VALVE_OUT, "Valve OUT", "Клапан вытяжной", "%", "%");
     dcts_act_channel_init(TMPR_IN_HEATING, "Tmpr IN heating", "Температура нагрев", "°C", "°C");
+    dcts_act_channel_init(TMPR_IN_COOLING, "Tmpr IN cooling", "Температура охлаждение", "°C", "°C");
     dcts_act_channel_init(HUM_IN, "Hum IN", "Влажность", "%", "%");
 
     //rele_channels
@@ -546,7 +550,7 @@ void rtc_task(void const * argument){
  * @brief display_task
  * @param argument
  */
-#define display_task_period 50
+#define display_task_period 100
 void display_task(void const * argument){
     (void)argument;
     menu_init();
@@ -1167,7 +1171,7 @@ static void main_page_print(u8 tick){
         if(dcts_act[TMPR_IN_HEATING].state.control == 1){
             sprintf(string,"T %.1f%s (%.1f%s)",(double)dcts_act[TMPR_IN_HEATING].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr,(double)dcts_act[TMPR_IN_HEATING].set_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
         }else{
-            sprintf(string,"T %.1f%s",(double)dcts_act[TMPR_IN_HEATING].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+            sprintf(string,"T %.1f%s",(double)dcts_meas[TMPR_IN_AVG].value,dcts_meas[TMPR_IN_AVG].unit_cyr);
         }
     }else{
         sprintf(string,"Обрыв  обоих  ");
@@ -1179,7 +1183,7 @@ static void main_page_print(u8 tick){
         if(dcts_act[HUM_IN].state.control == 1){
             sprintf(string,"Rh %.1f%s (%.1f%s)",(double)dcts_act[HUM_IN].meas_value,dcts_meas[HUM_IN_AVG].unit_cyr,(double)dcts_act[HUM_IN].set_value,dcts_meas[HUM_IN_AVG].unit_cyr);
         }else{
-            sprintf(string,"Rh %.1f%s",(double)dcts_act[HUM_IN].meas_value,dcts_meas[HUM_IN_AVG].unit_cyr);
+            sprintf(string,"Rh %.1f%s",(double)dcts_meas[HUM_IN_AVG].value,dcts_meas[HUM_IN_AVG].unit_cyr);
         }
     }else{
         sprintf(string,"датчиков    ");
@@ -1344,6 +1348,7 @@ static int get_param_value(char* string, menu_page_t page){
     case ACT_EN_2:
     case ACT_EN_3:
     case ACT_EN_4:
+    case ACT_EN_5:
         sprintf(string, "%s", off_on_descr[dcts_act[(uint8_t)(page - ACT_EN_0)/5].state.control]);
         break;
 
@@ -1352,6 +1357,7 @@ static int get_param_value(char* string, menu_page_t page){
     case ACT_SET_2:
     case ACT_SET_3:
     case ACT_SET_4:
+    case ACT_SET_5:
         sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_EN_0)/5].set_value, dcts_act[(uint8_t)(page - ACT_EN_0)/5].unit_cyr);
         break;
 
@@ -1360,6 +1366,7 @@ static int get_param_value(char* string, menu_page_t page){
     case ACT_HYST_2:
     case ACT_HYST_3:
     case ACT_HYST_4:
+    case ACT_HYST_5:
         sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_HYST_0)/5].hysteresis, dcts_act[(uint8_t)(page - ACT_HYST_0)/5].unit_cyr);
         break;
 
@@ -1368,6 +1375,7 @@ static int get_param_value(char* string, menu_page_t page){
     case ACT_CUR_2:
     case ACT_CUR_3:
     case ACT_CUR_4:
+    case ACT_CUR_5:
         sprintf(string, "%.1f%s", (double)dcts_act[(uint8_t)(page - ACT_CUR_0)/5].meas_value, dcts_act[(uint8_t)(page - ACT_CUR_0)/5].unit_cyr);
         break;
 
@@ -1491,11 +1499,22 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit = 0;
         edit_val.val_min.uint8 = 0;
         edit_val.val_max.uint8 = 1;
-        edit_val.p_val.p_uint8 = &dcts_act[HUM_IN].state.control;
+        edit_val.p_val.p_uint8 = &dcts_act[TMPR_IN_COOLING].state.control;
         edit_val.select_shift = 0;
         edit_val.select_width = Font_7x10.FontWidth*5;
         break;
     case ACT_EN_4:
+        edit_val.type = VAL_UINT8;
+        edit_val.digit_max = 0;
+        edit_val.digit_min = 0;
+        edit_val.digit = 0;
+        edit_val.val_min.uint8 = 0;
+        edit_val.val_max.uint8 = 1;
+        edit_val.p_val.p_uint8 = &dcts_act[HUM_IN].state.control;
+        edit_val.select_shift = 0;
+        edit_val.select_width = Font_7x10.FontWidth*5;
+        break;
+    case ACT_EN_5:
         edit_val.type = VAL_UINT8;
         edit_val.digit_max = 0;
         edit_val.digit_min = 0;
@@ -1546,11 +1565,22 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit = 0;
         edit_val.val_min.vfloat = 0.0;
         edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[TMPR_IN_COOLING].set_value;
+        edit_val.select_shift = 4;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case ACT_SET_4:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
         edit_val.p_val.p_float = &dcts_act[HUM_IN].set_value;
         edit_val.select_shift = 3;
         edit_val.select_width = Font_7x10.FontWidth;
         break;
-    case ACT_SET_4:
+    case ACT_SET_5:
         edit_val.type = VAL_FLOAT;
         edit_val.digit_max = 2;
         edit_val.digit_min = -1;
@@ -1601,11 +1631,22 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit = 0;
         edit_val.val_min.vfloat = 0.0;
         edit_val.val_max.vfloat = 100.0;
+        edit_val.p_val.p_float = &dcts_act[TMPR_IN_COOLING].hysteresis;
+        edit_val.select_shift = 4;
+        edit_val.select_width = Font_7x10.FontWidth;
+        break;
+    case ACT_HYST_4:
+        edit_val.type = VAL_FLOAT;
+        edit_val.digit_max = 2;
+        edit_val.digit_min = -1;
+        edit_val.digit = 0;
+        edit_val.val_min.vfloat = 0.0;
+        edit_val.val_max.vfloat = 100.0;
         edit_val.p_val.p_float = &dcts_act[HUM_IN].hysteresis;
         edit_val.select_shift = 3;
         edit_val.select_width = Font_7x10.FontWidth;
         break;
-    case ACT_HYST_4:
+    case ACT_HYST_5:
         edit_val.type = VAL_FLOAT;
         edit_val.digit_max = 2;
         edit_val.digit_min = -1;
@@ -2458,12 +2499,20 @@ void control_task(void const * argument){
     static pump_st_t pump_state = PUMP_EMPTY;
     static t_heat_t t_heat = T_HEAT_HEATING;
     channels_init();
+    //channel_PWM_timer_init(5);
+    //channel_PWM_timer_init(6);
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
 
         // input valve
         if(dcts_act[VALVE_IN].state.control){
+            channel_PWM_duty_set(5, (uint16_t)dcts_act[VALVE_IN].set_value);
+            //HAL_TIM_PWM_Start(&htim3, input_ch[5].pwm_channel);
 
+            //HAL_GPIO_WritePin(input_ch[5].port, input_ch[5].pin, GPIO_PIN_SET);
+        }else {
+            //HAL_TIM_PWM_Stop(&htim3, input_ch[5].pwm_channel);
+            //HAL_GPIO_WritePin(input_ch[5].port, input_ch[5].pin, GPIO_PIN_RESET);
         }
 
         // output valve
@@ -2503,7 +2552,12 @@ void control_task(void const * argument){
 
         // hummidity in
         if(dcts_act[HUM_IN].state.control){
-
+            if(dcts_meas[HUM_IN_AVG].valid){
+                dcts_act[HUM_IN].meas_value = dcts_meas[HUM_IN_AVG].value;
+            }else{
+                // current value unknown
+                dcts_act[HUM_IN].state.pin_state = 0;
+            }
         }
 
         // water pump
@@ -2559,6 +2613,90 @@ void control_task(void const * argument){
         }
         osDelayUntil(&last_wake_time, control_task_period);
     }
+}
+
+/**
+ * @brief Init timer for LCD backlight level control
+ * @param channel - channel number
+ * @return  0 - OK,\n
+ *          -1 - TIM init error,\n
+ *          -2 - TIM syncronyzation config error,\n
+ *          -3 - PWM channel config error
+ * @ingroup LCD
+ */
+static int channel_PWM_timer_init(u8 channel){
+    int result = 0;
+    TIM_MasterConfigTypeDef sMasterConfig = {0};
+    __HAL_RCC_TIM2_CLK_ENABLE();
+    __HAL_RCC_TIM3_CLK_ENABLE();
+
+    if(input_ch[channel].pwm_tim == TIM3){
+        htim3.Instance = TIM3;
+        htim3.Init.Prescaler = 3599;
+        htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+        htim3.Init.Period = 100;
+        htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
+        htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+        if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+        {
+          result = -1;
+        }
+        sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+        sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+        if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+        {
+          result = -2;
+        }
+    }/*else if(input_ch[channel].pwm_tim == TIM2){
+        htim2.Instance = TIM2;
+        htim2.Init.Prescaler = 71;
+        htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+        htim2.Init.Period = 100;
+        htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+        htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+        if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
+        {
+          result = -1;
+        }
+        sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+        sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+        if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+        {
+          result = -2;
+        }
+    }*/
+    if(channel_PWM_duty_set(channel, 0) < 0){
+        result = -3;
+    }
+    return result;
+}
+
+static int channel_PWM_duty_set(u8 channel, u16 duty){
+    int result = 0;
+    TIM_OC_InitTypeDef sConfigOC = {0};
+
+    if(input_ch[channel].pwm_tim == TIM3){
+        htim3.Instance = TIM3;
+        sConfigOC.OCMode = TIM_OCMODE_PWM1;
+        sConfigOC.Pulse = duty;
+        sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+        sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+        if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, input_ch[channel].pwm_channel) != HAL_OK)
+        {
+          result = -1;
+        }
+    }/*else if(input_ch[channel].pwm_tim == TIM2){
+        htim2.Instance = TIM2;
+        sConfigOC.OCMode = TIM_OCMODE_PWM1;
+        sConfigOC.Pulse = duty;
+        sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+        sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+        if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, input_ch[channel].pwm_channel) != HAL_OK)
+        {
+          result = -1;
+        }
+    }*/
+    return result;
 }
 
 uint16_t uint16_pow(uint16_t x, uint16_t pow){

@@ -83,9 +83,9 @@
 #define STEP_PORT GPIOB
 
 #define MEAS_NUM 16
-#define ACT_NUM 5
+#define ACT_NUM 6
 #define RELE_NUM 6
-#define SAVED_PARAMS_SIZE 39
+#define SAVED_PARAMS_SIZE 44
 #if(STM32F103xB == 1)
 #define BKP_REG_NUM 10
 #elif(STM32F103x8 == 1)
@@ -140,6 +140,7 @@
      VALVE_IN = 0,
      VALVE_OUT,
      TMPR_IN_HEATING,
+     TMPR_IN_COOLING,
      HUM_IN,
      AUTO_PUMP,
  }dcts_act_t;
@@ -268,7 +269,7 @@ typedef struct{
     uint16_t pin;
     ADC_TypeDef * adc_num;
     uint32_t adc_channel;
-    TIM_HandleTypeDef * pwm_tim;
+    TIM_TypeDef * pwm_tim;
     uint32_t pwm_channel;
 }in_channel_t;
 
@@ -289,6 +290,7 @@ extern edit_val_t edit_val;
 extern RTC_HandleTypeDef hrtc;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef hpwmtim;
 extern osThreadId rtcTaskHandle;
 extern osThreadId buttonsTaskHandle;
 extern osThreadId displayTaskHandle;

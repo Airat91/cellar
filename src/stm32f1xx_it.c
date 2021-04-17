@@ -48,9 +48,10 @@
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_FS;
 extern RTC_HandleTypeDef hrtc;
-extern TIM_HandleTypeDef htim3;
 extern UART_HandleTypeDef huart1;
 extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 
 /******************************************************************************/
@@ -227,9 +228,13 @@ void TIM1_UP_IRQHandler(void){
   HAL_TIM_IRQHandler(&htim1);
 }
 
-
-void TIM4_UP_IRQHandler(void){
-  HAL_TIM_IRQHandler(&htim4);
+/**
+* @brief This function handles TIM2 global interrupt.
+*/
+extern TIM_HandleTypeDef htim2;
+void TIM2_IRQHandler(void){
+  HAL_TIM_IRQHandler(&htim2);
+  us_cnt_H += 0x10000;
 }
 
 /**
@@ -239,13 +244,9 @@ void TIM3_IRQHandler(void){
   HAL_TIM_IRQHandler(&htim3);
 }
 
-/**
-* @brief This function handles TIM2 global interrupt.
-*/
-extern TIM_HandleTypeDef htim2;
-void TIM2_IRQHandler(void){
-  HAL_TIM_IRQHandler(&htim2);
-  us_cnt_H += 0x10000;
+
+void TIM4_UP_IRQHandler(void){
+  HAL_TIM_IRQHandler(&htim4);
 }
 
 /**
