@@ -54,7 +54,7 @@ MAKE_MENU       (main_page,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
     MAKE_MENU   (meas_ch_14,    meas_ch_15,     meas_ch_13,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_14,         "Опорное напр. В");
     MAKE_MENU   (meas_ch_15,    meas_ch_0,      meas_ch_14,     meas_channels,  NULL_ENTRY,     0,          MEAS_CH_15,         "Батарейка В");
   MAKE_MENU     (act_channels,  rele_channels,  meas_channels,  main_page,      act_ch_0,       6,          ACT_CHANNELS,       "Упр. каналы");
-    MAKE_MENU   (act_ch_0,      act_ch_1,       act_ch_4,       act_channels,   act_en_0,       2,          ACT_CH_0,           "Клапан приточный");
+    MAKE_MENU   (act_ch_0,      act_ch_1,       act_ch_5,       act_channels,   act_en_0,       2,          ACT_CH_0,           "Клапан приточный");
       MAKE_MENU (act_en_0,      act_set_0,      act_set_0,      act_ch_0,       EDITED_VAL,     0,          ACT_EN_0,           "Управление");
       MAKE_MENU (act_set_0,     act_en_0,       act_en_0,       act_ch_0,       EDITED_VAL,     0,          ACT_SET_0,          "Задано");
       //MAKE_MENU (act_hyst_0,    act_cur_0,      act_set_0,      act_ch_0,       EDITED_VAL,     0,          ACT_HYST_0,         "Гистерезис");
@@ -82,9 +82,9 @@ MAKE_MENU       (main_page,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
     MAKE_MENU   (act_ch_5,      act_ch_0,       act_ch_4,       act_channels,   act_en_5,       5,          ACT_CH_5,           "Авто дренаж");
       MAKE_MENU (act_en_5,      wtr_min_ref,    wtr_max_cur,    act_ch_5,       EDITED_VAL,     0,          ACT_EN_5,           "Управление");
       MAKE_MENU (wtr_min_ref,   wtr_min_cur,    act_en_5,       act_ch_5,       EDITED_VAL,     0,          WTR_MIN_REF,        "Мин. порог");
-      MAKE_MENU (wtr_min_cur,   wtr_max_ref,    wtr_min_ref,    act_ch_5,       NULL_ENTRY,     0,          MEAS_CH_12,         "Мин. уровень");
+      MAKE_MENU (wtr_min_cur,   wtr_max_ref,    wtr_min_ref,    act_ch_5,       NULL_ENTRY,     0,          MEAS_CH_8,          "Мин. уровень");
       MAKE_MENU (wtr_max_ref,   wtr_max_cur,    wtr_min_cur,    act_ch_5,       EDITED_VAL,     0,          WTR_MAX_REF,        "Макс. порог");
-      MAKE_MENU (wtr_max_cur,   act_en_5,       wtr_max_ref,    act_ch_5,       NULL_ENTRY,     0,          MEAS_CH_15,         "Макс. уровень");
+      MAKE_MENU (wtr_max_cur,   act_en_5,       wtr_max_ref,    act_ch_5,       NULL_ENTRY,     0,          MEAS_CH_11,         "Макс. уровень");
   MAKE_MENU     (rele_channels, connection,     act_channels,   main_page,      rele_ch_0,      6,          RELE_CHANNELS,      "Релейные выходы");
     MAKE_MENU   (rele_ch_0,     rele_ch_1,      rele_ch_5,      rele_channels,  rele_auto_0,    2,          RELE_CH_0,          "Приточка");
       MAKE_MENU (rele_auto_0,   rele_cntrl_0,   rele_cntrl_0,   rele_ch_0,      EDITED_VAL,     0,          RELE_AUTO_MAN_0,    "Управление");

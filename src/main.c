@@ -1168,8 +1168,14 @@ static void main_page_print(u8 tick){
 
     //temperature and hummidity in
     if(dcts_meas[TMPR_IN_AVG].valid == 1){
-        if(dcts_act[TMPR_IN_HEATING].state.control == 1){
-            sprintf(string,"T %.1f%s (%.1f%s)",(double)dcts_act[TMPR_IN_HEATING].meas_value,dcts_meas[TMPR_IN_AVG].unit_cyr,(double)dcts_act[TMPR_IN_HEATING].set_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+        if((dcts_act[TMPR_IN_HEATING].state.control == 1)||(dcts_act[TMPR_IN_COOLING].state.control == 1)){
+            if((dcts_act[TMPR_IN_HEATING].state.control == 1)&&(dcts_act[TMPR_IN_COOLING].state.control == 1)){
+                        sprintf(string,"T %.1f%s (ошибка)",(double)dcts_meas[TMPR_IN_AVG].value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+            }else if(dcts_act[TMPR_IN_HEATING].state.control == 1){
+                sprintf(string,"T %.1f%s (%.1f%s)",(double)dcts_meas[TMPR_IN_AVG].value,dcts_meas[TMPR_IN_AVG].unit_cyr,(double)dcts_act[TMPR_IN_HEATING].set_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+            }else if(dcts_act[TMPR_IN_COOLING].state.control == 1){
+                sprintf(string,"T %.1f%s (%.1f%s)",(double)dcts_meas[TMPR_IN_AVG].value,dcts_meas[TMPR_IN_AVG].unit_cyr,(double)dcts_act[TMPR_IN_COOLING].set_value,dcts_meas[TMPR_IN_AVG].unit_cyr);
+            }
         }else{
             sprintf(string,"T %.1f%s",(double)dcts_meas[TMPR_IN_AVG].value,dcts_meas[TMPR_IN_AVG].unit_cyr);
         }
@@ -2498,26 +2504,30 @@ void control_task(void const * argument){
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     static pump_st_t pump_state = PUMP_EMPTY;
     static t_heat_t t_heat = T_HEAT_HEATING;
+    static t_cool_t t_cool = T_COOL_COOLING;
     channels_init();
-    //channel_PWM_timer_init(5);
-    //channel_PWM_timer_init(6);
+    channel_PWM_timer_init(5);
+    channel_PWM_timer_init(6);
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
 
         // input valve
         if(dcts_act[VALVE_IN].state.control){
             channel_PWM_duty_set(5, (uint16_t)dcts_act[VALVE_IN].set_value);
-            //HAL_TIM_PWM_Start(&htim3, input_ch[5].pwm_channel);
-
+            HAL_TIM_PWM_Start(&htim3, input_ch[5].pwm_channel);
             //HAL_GPIO_WritePin(input_ch[5].port, input_ch[5].pin, GPIO_PIN_SET);
         }else {
-            //HAL_TIM_PWM_Stop(&htim3, input_ch[5].pwm_channel);
-            //HAL_GPIO_WritePin(input_ch[5].port, input_ch[5].pin, GPIO_PIN_RESET);
+            HAL_TIM_PWM_Stop(&htim3, input_ch[5].pwm_channel);
+            HAL_GPIO_WritePin(input_ch[5].port, input_ch[5].pin, GPIO_PIN_RESET);
         }
 
         // output valve
         if(dcts_act[VALVE_OUT].state.control){
-
+            channel_PWM_duty_set(6, (uint16_t)dcts_act[VALVE_OUT].set_value);
+            HAL_TIM_PWM_Start(&htim3, input_ch[6].pwm_channel);
+        }else {
+            HAL_TIM_PWM_Stop(&htim3, input_ch[6].pwm_channel);
+            HAL_GPIO_WritePin(input_ch[6].port, input_ch[6].pin, GPIO_PIN_RESET);
         }
 
         // temperature in (heating)
@@ -2547,6 +2557,36 @@ void control_task(void const * argument){
             if(dcts_rele[HEATER].state.control_by_act == 1){
                 if(dcts_rele[HEATER].state.control != dcts_act[TMPR_IN_HEATING].state.pin_state)
                 dcts_rele[HEATER].state.control = dcts_act[TMPR_IN_HEATING].state.pin_state;
+            }
+        }
+
+        // temperature in (cooling)
+        if(dcts_act[TMPR_IN_COOLING].state.control){
+            if(dcts_meas[TMPR_IN_AVG].valid){
+                dcts_act[TMPR_IN_COOLING].meas_value = dcts_meas[TMPR_IN_AVG].value;
+
+                switch(t_cool){
+                case T_COOL_COOLING:
+                    dcts_act[TMPR_IN_COOLING].state.pin_state = 1;
+                    if(dcts_act[TMPR_IN_COOLING].meas_value <= (dcts_act[TMPR_IN_COOLING].set_value - 0.5f*dcts_act[TMPR_IN_COOLING].hysteresis)){
+                        t_cool = T_COOL_HEATING;
+                    }
+                    break;
+                case T_COOL_HEATING:
+                    dcts_act[TMPR_IN_COOLING].state.pin_state = 0;
+                    if(dcts_act[TMPR_IN_COOLING].meas_value >= (dcts_act[TMPR_IN_COOLING].set_value + 0.5f*dcts_act[TMPR_IN_COOLING].hysteresis)){
+                        t_cool = T_COOL_COOLING;
+                    }
+                    break;
+                }
+            }else{
+                // current value unknown
+                dcts_act[TMPR_IN_COOLING].state.pin_state = 0;
+            }
+            // set rele_control if control_by_act enable
+            if(dcts_rele[FREEZER].state.control_by_act == 1){
+                if(dcts_rele[FREEZER].state.control != dcts_act[TMPR_IN_COOLING].state.pin_state)
+                dcts_rele[FREEZER].state.control = dcts_act[TMPR_IN_COOLING].state.pin_state;
             }
         }
 
