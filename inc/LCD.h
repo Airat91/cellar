@@ -11,8 +11,8 @@
   * @{
   */
 #define LCD_SPI SPI1
-#define MAX_X 128
-#define MAX_Y 64
+#define MAX_X 127
+#define MAX_Y 63
 #define LCD_BUF_ARRAY_LEN 1024
 /**
   * @}
