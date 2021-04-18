@@ -227,7 +227,7 @@ int uart_handle(void){
     dd=0;
     status = huart2.Instance->SR;
     // receive mode
-    if((status & USART_SR_RXNE)&&!(uart_2.state &= UART_STATE_SENDING)){
+    if((status & USART_SR_RXNE)&&!(uart_2.state & UART_STATE_SENDING)){
         huart2.Instance->SR &= ~(USART_SR_RXNE);
         dd=huart2.Instance->DR;
         uart_2.state |= UART_STATE_RECIEVE;

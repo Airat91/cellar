@@ -222,7 +222,7 @@ int main(void){
     osThreadDef(rtc_task, rtc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     rtcTaskHandle = osThreadCreate(osThread(rtc_task), NULL);
 
-    osThreadDef(display_task, display_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*3);
+    osThreadDef(display_task, display_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*4);
     displayTaskHandle = osThreadCreate(osThread(display_task), NULL);
 
     osThreadDef(adc_task, adc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE*3);
@@ -981,7 +981,7 @@ static void main_page_print(u8 tick){
             LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
             LCD_set_xy(88,50);
             LCD_print_char(12,&Icon_16x16,LCD_COLOR_BLACK);
-            LCD_fill_area(84,48,92,64,LCD_COLOR_WHITE);
+            LCD_fill_area(88,50,92,64,LCD_COLOR_WHITE);
 
             LCD_set_xy(28,12);
             LCD_print_char(14,&Icon_16x16,LCD_COLOR_BLACK);
@@ -2485,7 +2485,7 @@ void uart_task(void const * argument){
                 if(i == MEAS_NUM - 1){
                     strncat(string,"\n",1);
                 }
-                uart_send(string,(uint16_t)strlen(string));
+                uart_send((uint8_t*)string,(uint16_t)strlen(string));
             }
         }else{
             tick++;
@@ -2555,8 +2555,14 @@ void control_task(void const * argument){
             }
             // set rele_control if control_by_act enable
             if(dcts_rele[HEATER].state.control_by_act == 1){
-                if(dcts_rele[HEATER].state.control != dcts_act[TMPR_IN_HEATING].state.pin_state)
-                dcts_rele[HEATER].state.control = dcts_act[TMPR_IN_HEATING].state.pin_state;
+                if(dcts_rele[HEATER].state.control != dcts_act[TMPR_IN_HEATING].state.pin_state){
+                    dcts_rele[HEATER].state.control = dcts_act[TMPR_IN_HEATING].state.pin_state;
+                }
+            }
+        }else{
+            // disable rele_control if control_by_act enable
+            if(dcts_rele[HEATER].state.control_by_act == 1){
+                dcts_rele[HEATER].state.control = 0;
             }
         }
 
@@ -2587,6 +2593,11 @@ void control_task(void const * argument){
             if(dcts_rele[FREEZER].state.control_by_act == 1){
                 if(dcts_rele[FREEZER].state.control != dcts_act[TMPR_IN_COOLING].state.pin_state)
                 dcts_rele[FREEZER].state.control = dcts_act[TMPR_IN_COOLING].state.pin_state;
+            }
+        }else{
+            // disable rele_control if control_by_act enable
+            if(dcts_rele[FREEZER].state.control_by_act == 1){
+                dcts_rele[FREEZER].state.control = 0;
             }
         }
 
