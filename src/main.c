@@ -1420,16 +1420,16 @@ static int get_param_value(char* string, menu_page_t page){
         sprintf(string, "%d", bitrate_array[bitrate_array_pointer]*100);
         break;
     case MDB_OVERRUN_ERR:
-        sprintf(string, "%d", uart_2.overrun_err_cnt);
+        sprintf(string, "%d", uart_1.overrun_err_cnt);
         break;
     case MDB_PARITY_ERR:
-        sprintf(string, "%d", uart_2.parity_err_cnt);
+        sprintf(string, "%d", uart_1.parity_err_cnt);
         break;
     case MDB_FRAME_ERR:
-        sprintf(string, "%d", uart_2.frame_err_cnt);
+        sprintf(string, "%d", uart_1.frame_err_cnt);
         break;
     case MDB_NOISE_ERR:
-        sprintf(string, "%d", uart_2.noise_err_cnt);
+        sprintf(string, "%d", uart_1.noise_err_cnt);
         break;
 
     case LIGHT_LVL:
@@ -2452,44 +2452,47 @@ void uart_task(void const * argument){
     char string[100];
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
-        if((uart_2.state & UART_STATE_RECIEVE)&&\
-                ((uint16_t)(us_tim_get_value() - uart_2.timeout_last) > uart_2.timeout)){
-            memcpy(uart_2.buff_received, uart_2.buff_in, uart_2.in_ptr);
-            uart_2.received_len = uart_2.in_ptr;
-            uart_2.in_ptr = 0;
-            uart_2.state &= ~UART_STATE_RECIEVE;
-            uart_2.state &= ~UART_STATE_ERROR;
-            uart_2.state |= UART_STATE_IN_HANDING;
-            uart_2.conn_last = 0;
+        if((uart_1.state & UART_STATE_RECIEVE)&&\
+                ((uint16_t)(us_tim_get_value() - uart_1.timeout_last) > uart_1.timeout)){
+            memcpy(uart_1.buff_received, uart_1.buff_in, uart_1.in_ptr);
+            uart_1.received_len = uart_1.in_ptr;
+            uart_1.in_ptr = 0;
+            uart_1.state &= ~UART_STATE_RECIEVE;
+            uart_1.state &= ~UART_STATE_ERROR;
+            uart_1.state |= UART_STATE_IN_HANDING;
+            uart_1.conn_last = 0;
 
-            if(modbus_packet_for_me(uart_2.buff_received, uart_2.received_len)){
-                uint16_t new_len = modbus_rtu_packet(uart_2.buff_received, uart_2.received_len);
-                uart_send(uart_2.buff_received, new_len);
-                uart_2.state &= ~UART_STATE_IN_HANDING;
+            if(modbus_packet_for_me(uart_1.buff_received, uart_1.received_len)){
+                uint16_t new_len = modbus_rtu_packet(uart_1.buff_received, uart_1.received_len);
+                uart_send(uart_1.buff_received, new_len);
+                uart_1.state &= ~UART_STATE_IN_HANDING;
             }
-            if(uart_2.state & UART_STATE_IN_HANDING){
-                dcts_packet_handle(uart_2.buff_received, uart_2.received_len);
+            if(uart_1.state & UART_STATE_IN_HANDING){
+                dcts_packet_handle(uart_1.buff_received, uart_1.received_len);
             }else{
-                uart_2.state &= ~UART_STATE_IN_HANDING;
+                uart_1.state &= ~UART_STATE_IN_HANDING;
             }
         }
-        if(uart_2.conn_last > uart_2.conn_lost_timeout){
+        if(uart_1.conn_last > uart_1.conn_lost_timeout){
             uart_deinit();
             uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
         }
         if(tick == 1000/uart_task_period){
             tick = 0;
             //HAL_GPIO_TogglePin(LED_PORT,LED_PIN);
-            for(uint8_t i = 0; i < MEAS_NUM; i++){
+            /*for(uint8_t i = 0; i < MEAS_NUM; i++){
                 sprintf(string, "%s:\t%.1f(%s)\n",dcts_meas[i].name,(double)dcts_meas[i].value,dcts_meas[i].unit);
                 if(i == MEAS_NUM - 1){
                     strncat(string,"\n",1);
                 }
                 uart_send((uint8_t*)string,(uint16_t)strlen(string));
             }
+            sprintf(string, "test\n");
+            uart_send((uint8_t*)string,(uint16_t)strlen(string));*/
+
         }else{
             tick++;
-            uart_2.conn_last += uart_task_period;
+            uart_1.conn_last += uart_task_period;
         }
 
         osDelayUntil(&last_wake_time, uart_task_period);

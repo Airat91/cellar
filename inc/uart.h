@@ -75,8 +75,8 @@ typedef struct {
 extern uint8_t uart_buff_out[];
 extern uint8_t uart_buff_received[];
 extern uint8_t uart_buff_in[];
-extern uart_stream_t uart_2;
-extern UART_HandleTypeDef huart2;
+extern uart_stream_t uart_1;
+extern UART_HandleTypeDef huart1;
 
 /*========== FUNCTION PROTOTYPES ==========*/
 
