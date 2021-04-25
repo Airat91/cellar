@@ -126,7 +126,7 @@ static void save_to_bkp(u8 bkp_num, uint16_t var);
 static uint16_t read_bkp(u8 bkp_num);
 //static float read_float_bkp(u8 bkp_num, u8 sign);
 static int channel_PWM_timer_init(u8 channel);
-static int channel_PWM_duty_set(u8 channel, u16 duty);
+static int channel_PWM_duty_set(u8 channel, float duty);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
@@ -2516,7 +2516,7 @@ void control_task(void const * argument){
 
         // input valve
         if(dcts_act[VALVE_IN].state.control){
-            channel_PWM_duty_set(5, (uint16_t)dcts_act[VALVE_IN].set_value);
+            channel_PWM_duty_set(5, dcts_act[VALVE_IN].set_value);
             HAL_TIM_PWM_Start(&htim3, input_ch[5].pwm_channel);
             //HAL_GPIO_WritePin(input_ch[5].port, input_ch[5].pin, GPIO_PIN_SET);
         }else {
@@ -2526,7 +2526,7 @@ void control_task(void const * argument){
 
         // output valve
         if(dcts_act[VALVE_OUT].state.control){
-            channel_PWM_duty_set(6, (uint16_t)dcts_act[VALVE_OUT].set_value);
+            channel_PWM_duty_set(6, dcts_act[VALVE_OUT].set_value);
             HAL_TIM_PWM_Start(&htim3, input_ch[6].pwm_channel);
         }else {
             HAL_TIM_PWM_Stop(&htim3, input_ch[6].pwm_channel);
@@ -2686,9 +2686,9 @@ static int channel_PWM_timer_init(u8 channel){
 
     if(input_ch[channel].pwm_tim == TIM3){
         htim3.Instance = TIM3;
-        htim3.Init.Prescaler = 3599;
+        htim3.Init.Prescaler = 89;
         htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-        htim3.Init.Period = 100;
+        htim3.Init.Period = 1000;
         htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
         htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
         if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
@@ -2725,14 +2725,14 @@ static int channel_PWM_timer_init(u8 channel){
     return result;
 }
 
-static int channel_PWM_duty_set(u8 channel, u16 duty){
+static int channel_PWM_duty_set(u8 channel, float duty){
     int result = 0;
     TIM_OC_InitTypeDef sConfigOC = {0};
 
     if(input_ch[channel].pwm_tim == TIM3){
         htim3.Instance = TIM3;
         sConfigOC.OCMode = TIM_OCMODE_PWM1;
-        sConfigOC.Pulse = duty;
+        sConfigOC.Pulse = (uint16_t)(duty * 10.0f);
         sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
         sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
         if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, input_ch[channel].pwm_channel) != HAL_OK)
@@ -2742,7 +2742,7 @@ static int channel_PWM_duty_set(u8 channel, u16 duty){
     }/*else if(input_ch[channel].pwm_tim == TIM2){
         htim2.Instance = TIM2;
         sConfigOC.OCMode = TIM_OCMODE_PWM1;
-        sConfigOC.Pulse = duty;
+        sConfigOC.Pulse = (uint16_t)(duty * 10.0f);
         sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
         sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
         if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, input_ch[channel].pwm_channel) != HAL_OK)
