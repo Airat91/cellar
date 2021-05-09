@@ -143,6 +143,8 @@
      TMPR_IN_COOLING,
      HUM_IN,
      AUTO_PUMP,
+     WTR_MIN_LVL,
+     WTR_MAX_LVL,
  }dcts_act_t;
 
  typedef enum {
@@ -250,6 +252,7 @@ typedef enum{
     CH_MODE_DO,
     CH_MODE_AM3202,
     CH_MODE_PWM,
+    CH_MODE_DS18B20,
 }ch_mode_t;
 
 typedef enum{
@@ -303,6 +306,7 @@ extern osThreadId menuTaskHandle;
 extern osThreadId controlTaskHandle;
 extern osThreadId adcTaskHandle;
 extern osThreadId am2302TaskHandle;
+extern osThreadId ds18TaskHandle;
 extern osThreadId navigationtTaskHandle;
 extern osThreadId uartTaskHandle;
 extern saved_to_flash_t config;
@@ -318,12 +322,15 @@ void rtc_task(void const * argument);
 void navigation_task(void const * argument);
 void uart_task(void const * argument);
 void control_task(void const * argument);
+void tim2_init(void);
+//void ds18_task(void const * argument);
 
 uint32_t us_tim_get_value(void);
 void us_tim_delay(uint32_t us);
 uint32_t uint32_pow(uint16_t x, uint8_t pow);
 uint16_t uint16_pow(uint16_t x, uint16_t pow);
 float float_pow(float x, int pow);
+void refresh_watchdog(void);
 
 
 #endif /* __MAIN_H__ */

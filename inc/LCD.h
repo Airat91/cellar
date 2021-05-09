@@ -1,10 +1,11 @@
+#ifndef LCD_H
+#define LCD_H 1
+
 #include "stdint.h"
 #include "stm32f1xx_hal.h"
 #include "stm32f1xx_hal_spi.h"
 #include "fonts.h"
 
-#ifndef LCD_H
-#define LCD_H 1
 
 /**
   * @addtogroup LCD

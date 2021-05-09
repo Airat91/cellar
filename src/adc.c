@@ -16,6 +16,7 @@
 ADC_HandleTypeDef hadc1;
 
 #define ADC_BUF_SIZE 50
+#define WTR_LVL_BUF_SIZE 10
 #define ADC_PERIOD 100
 #define ADC_MAX 4095
 #define ADC_VREF 3.3f
@@ -138,10 +139,11 @@ void adc_gpio_deinit (void){
 void adc_task(void const * argument){
     (void)argument;
     uint16_t pwr[ADC_BUF_SIZE];
-    uint16_t wtr_min[ADC_BUF_SIZE];
-    uint16_t wtr_max[ADC_BUF_SIZE];
+    uint16_t wtr_min[WTR_LVL_BUF_SIZE];
+    uint16_t wtr_max[WTR_LVL_BUF_SIZE];
     uint16_t vref[ADC_BUF_SIZE];
     uint8_t tick = 0;
+    uint8_t wtr_lvl_tick = 0;
     float temp = 0.0f;
     float v_3_3 = 0.0f;
     adc_init();
@@ -154,27 +156,30 @@ void adc_task(void const * argument){
 
 
         pwr[tick] = (uint16_t)hadc1.Instance->JDR1;
-        wtr_min[tick] = (uint16_t)hadc1.Instance->JDR2;
-        wtr_max[tick] = (uint16_t)hadc1.Instance->JDR3;
+        wtr_min[wtr_lvl_tick] = (uint16_t)hadc1.Instance->JDR2;
+        wtr_max[wtr_lvl_tick] = (uint16_t)hadc1.Instance->JDR3;
         vref[tick] = (uint16_t)hadc1.Instance->JDR4;
         v_3_3 = VREF_INT/vref[tick]*ADC_MAX;
 
         for(uint8_t i = 0; i < ADC_BUF_SIZE; i++){
             pwr_sum += pwr[i];
+            vref_sum += vref[i];
+        }
+
+        for(uint8_t i = 0; i < WTR_LVL_BUF_SIZE; i++){
             wtr_min_sum += wtr_min[i];
             wtr_max_sum += wtr_max[i];
-            vref_sum += vref[i];
         }
 
         temp = (float)pwr_sum/ADC_BUF_SIZE;
         taskENTER_CRITICAL();
         dcts.dcts_pwr = temp/ADC_MAX*ADC_VREF*PWR_K;
 
-        dcts_meas[WTR_MIN_ADC].value = (float)wtr_min_sum/ADC_BUF_SIZE;
+        dcts_meas[WTR_MIN_ADC].value = (float)wtr_min_sum/WTR_LVL_BUF_SIZE;
         dcts_meas[WTR_MIN_VLT].value = dcts_meas[WTR_MIN_ADC].value*v_3_3/ADC_MAX;
         dcts_meas[WTR_MIN_RES].value = dcts_meas[WTR_MIN_VLT].value*INPUT_RES/(v_3_3 -  dcts_meas[WTR_MIN_VLT].value);
 
-        dcts_meas[WTR_MAX_ADC].value = (float)wtr_max_sum/ADC_BUF_SIZE;
+        dcts_meas[WTR_MAX_ADC].value = (float)wtr_max_sum/WTR_LVL_BUF_SIZE;
         dcts_meas[WTR_MAX_VLT].value = dcts_meas[WTR_MAX_ADC].value*v_3_3/ADC_MAX;
         dcts_meas[WTR_MAX_RES].value = dcts_meas[WTR_MAX_VLT].value*INPUT_RES/(v_3_3 -  dcts_meas[WTR_MAX_VLT].value);
 
@@ -190,8 +195,12 @@ void adc_task(void const * argument){
         taskEXIT_CRITICAL();
 
         tick++;
+        wtr_lvl_tick++;
         if(tick >= ADC_BUF_SIZE){
             tick = 0;
+        }
+        if(wtr_lvl_tick >= WTR_LVL_BUF_SIZE){
+            wtr_lvl_tick = 0;
         }
         osDelayUntil(&last_wake_time, ADC_PERIOD);
     }

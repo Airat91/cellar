@@ -64,6 +64,7 @@
 #include "flash.h"
 #include "uart.h"
 #include "modbus.h"
+#include "ds18.h"
 
 /**
   * @defgroup MAIN
@@ -71,7 +72,7 @@
 
 #define FEEDER 0
 #define DEFAULT_TASK_PERIOD 100
-#define RELEASE 0
+#define RELEASE 1
 #define DO_NUM 6
 #define IN_CHANNEL_NUM 8
 #define RTC_KEY 0xABCD
@@ -89,6 +90,7 @@ osThreadId menuTaskHandle;
 osThreadId controlTaskHandle;
 osThreadId adcTaskHandle;
 osThreadId am2302TaskHandle;
+osThreadId ds18TaskHandle;
 osThreadId navigationtTaskHandle;
 osThreadId uartTaskHandle;
 
@@ -101,7 +103,6 @@ static void MX_IWDG_Init(void);
 static void RTC_Init(void);
 //static void MX_ADC1_Init(void);
 //static void MX_USART1_UART_Init(void);
-static void tim2_init(void);
 static void print_header(void);
 static void main_page_print(u8 tick);
 static void menu_page_print(u8 tick);
@@ -177,7 +178,7 @@ in_channel_t input_ch[8] = {
     {.mode = CH_MODE_AM3202,.port = CH_4_PORT, .pin = CH_4_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_6, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_1},
     {.mode = CH_MODE_PWM,   .port = CH_5_PORT, .pin = CH_5_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_7, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_2},
     {.mode = CH_MODE_PWM,   .port = CH_6_PORT, .pin = CH_6_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_8, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_3},
-    {.mode = CH_MODE_NONE,  .port = CH_7_PORT, .pin = CH_7_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_9, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_4},
+    {.mode = CH_MODE_NONE,  .port = CH_7_PORT,.pin = CH_7_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_9, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_4},
 };
 
 /*const ch_t ch[8] = {
@@ -215,9 +216,7 @@ int main(void){
     dcts_init();
     restore_params();
     //led_lin_init();
-#if RELEASE
-    MX_IWDG_Init();
-#endif //RELEASE
+    refresh_watchdog();
 
     osThreadDef(rtc_task, rtc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
     rtcTaskHandle = osThreadCreate(osThread(rtc_task), NULL);
@@ -240,9 +239,11 @@ int main(void){
     osThreadDef(uart_task, uart_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*4);
     uartTaskHandle = osThreadCreate(osThread(uart_task), NULL);
 
-
     osThreadDef(control_task, control_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*2);
     controlTaskHandle = osThreadCreate(osThread(control_task), NULL);
+
+    /*osThreadDef(ds18_task, ds18_task, osPriorityHigh, 0, configMINIMAL_STACK_SIZE*2);
+    ds18TaskHandle = osThreadCreate(osThread(ds18_task), NULL);*/
 
     /* Start scheduler */
     osKernelStart();
@@ -256,7 +257,7 @@ int main(void){
 void dcts_init (void) {
 
     dcts.dcts_id = DCTS_ID_COMBINED;
-    strcpy (dcts.dcts_ver, "0.0.1");
+    strcpy (dcts.dcts_ver, "0.1.0");
     strcpy (dcts.dcts_name, "Pogreb");
     strcpy (dcts.dcts_name_cyr, "Погреб");
     dcts.dcts_address = 0x0B;
@@ -306,6 +307,8 @@ void dcts_init (void) {
     dcts_act_channel_init(TMPR_IN_HEATING, "Tmpr IN heating", "Температура нагрев", "°C", "°C");
     dcts_act_channel_init(TMPR_IN_COOLING, "Tmpr IN cooling", "Температура охлаждение", "°C", "°C");
     dcts_act_channel_init(HUM_IN, "Hum IN", "Влажность", "%", "%");
+    dcts_act_channel_init(WTR_MIN_LVL, "Min level detect", "Минимальный уровень", "Ohm", "Ом");
+    dcts_act_channel_init(WTR_MIN_LVL, "Max level detect", "Максимальный уровень", "Ohm", "Ом");
 
     //rele_channels
 
@@ -459,9 +462,7 @@ void rtc_task(void const * argument){
         default:
             break;
         }
-#if RELEASE
-        HAL_IWDG_Refresh(&hiwdg);
-#endif //RELEASE
+        refresh_watchdog();
         osDelayUntil(&last_wake_time, RTC_TASK_PERIOD);
     }
 }
@@ -560,9 +561,7 @@ void display_task(void const * argument){
     menu_page_t last_page = selectedMenuItem->Page;
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
-#if RELEASE
-        HAL_IWDG_Refresh(&hiwdg);
-#endif //RELEASE
+        refresh_watchdog();
         LCD_clr();
         if(last_page != selectedMenuItem->Page){
             tick = 0;
@@ -2766,7 +2765,7 @@ uint16_t uint16_pow(uint16_t x, uint16_t pow){
  * @brief Init us timer
  * @ingroup MAIN
  */
-static void tim2_init(void){
+void tim2_init(void){
     TIM_ClockConfigTypeDef sClockSourceConfig;
     TIM_MasterConfigTypeDef sMasterConfig;
     __HAL_RCC_TIM2_CLK_ENABLE();
@@ -3130,6 +3129,12 @@ static void channels_init(void){
             GPIO_InitStruct.Pin = input_ch[i].pin;
             HAL_GPIO_Init(input_ch[i].port, &GPIO_InitStruct);
             break;
+        case CH_MODE_DS18B20:
+            GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+            GPIO_InitStruct.Pull = GPIO_NOPULL;
+            GPIO_InitStruct.Pin = input_ch[i].pin;
+            HAL_GPIO_Init(input_ch[i].port, &GPIO_InitStruct);
+            break;
         default:
             ;
         }
@@ -3170,6 +3175,12 @@ float float_pow(float x, int pow){
         }
     }
     return  result;
+}
+
+void refresh_watchdog(void){
+#if(RELEASE == 1)
+    MX_IWDG_Init();
+#endif//RELEASE
 }
 
 #ifdef  USE_FULL_ASSERT
