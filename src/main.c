@@ -72,7 +72,7 @@
 
 #define FEEDER 0
 #define DEFAULT_TASK_PERIOD 100
-#define RELEASE 1
+#define RELEASE 0
 #define DO_NUM 6
 #define IN_CHANNEL_NUM 8
 #define RTC_KEY 0xABCD
@@ -2472,7 +2472,7 @@ void uart_task(void const * argument){
                 uart_1.state &= ~UART_STATE_IN_HANDING;
             }
         }
-        if(uart_1.conn_last > uart_1.conn_lost_timeout){
+        if((uart_1.conn_last > uart_1.conn_lost_timeout)||(uart_1.overrun_err_cnt > 2)){
             uart_deinit();
             uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
         }
@@ -2502,7 +2502,7 @@ void uart_task(void const * argument){
 void control_task(void const * argument){
     (void)argument;
     GPIO_InitTypeDef GPIO_InitStruct;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     static pump_st_t pump_state = PUMP_EMPTY;
     static t_heat_t t_heat = T_HEAT_HEATING;
@@ -2515,7 +2515,7 @@ void control_task(void const * argument){
 
         // input valve
         if(dcts_act[VALVE_IN].state.control){
-            channel_PWM_duty_set(5, dcts_act[VALVE_IN].set_value);
+            channel_PWM_duty_set(5, (dcts_act[VALVE_IN].set_value*0.05f+5.0f));
             HAL_TIM_PWM_Start(&htim3, input_ch[5].pwm_channel);
             //HAL_GPIO_WritePin(input_ch[5].port, input_ch[5].pin, GPIO_PIN_SET);
         }else {
@@ -2525,7 +2525,7 @@ void control_task(void const * argument){
 
         // output valve
         if(dcts_act[VALVE_OUT].state.control){
-            channel_PWM_duty_set(6, dcts_act[VALVE_OUT].set_value);
+            channel_PWM_duty_set(6, (dcts_act[VALVE_OUT].set_value*0.05f+5.0f));
             HAL_TIM_PWM_Start(&htim3, input_ch[6].pwm_channel);
         }else {
             HAL_TIM_PWM_Stop(&htim3, input_ch[6].pwm_channel);
@@ -2648,18 +2648,18 @@ void control_task(void const * argument){
                 //rele on
                 if(dcts_rele[i].state.status == 0){
                     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+                    GPIO_InitStruct.Pin = do_ch[i].pin;
                     HAL_GPIO_Init (do_ch[i].port, &GPIO_InitStruct);
                     HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_RESET);
                     dcts_rele[i].state.status = 1;
-                }else{
-
                 }
             }else{
                 //rele off
                 if(dcts_rele[i].state.status == 1){
                     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+                    GPIO_InitStruct.Pin = do_ch[i].pin;
                     HAL_GPIO_Init (do_ch[i].port, &GPIO_InitStruct);
-                    HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
+                    //HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
                     dcts_rele[i].state.status = 0;
                 }
             }
@@ -2685,9 +2685,9 @@ static int channel_PWM_timer_init(u8 channel){
 
     if(input_ch[channel].pwm_tim == TIM3){
         htim3.Instance = TIM3;
-        htim3.Init.Prescaler = 89;
+        htim3.Init.Prescaler = 719;
         htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-        htim3.Init.Period = 1000;
+        htim3.Init.Period = 2000;
         htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
         htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
         if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
@@ -2731,7 +2731,7 @@ static int channel_PWM_duty_set(u8 channel, float duty){
     if(input_ch[channel].pwm_tim == TIM3){
         htim3.Instance = TIM3;
         sConfigOC.OCMode = TIM_OCMODE_PWM1;
-        sConfigOC.Pulse = (uint16_t)(duty * 10.0f);
+        sConfigOC.Pulse = (uint16_t)(duty * 20.0f);
         sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
         sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
         if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, input_ch[channel].pwm_channel) != HAL_OK)
@@ -3090,7 +3090,7 @@ static void channels_init(void){
     __HAL_RCC_GPIOC_CLK_ENABLE();
     GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     for(u8 i = 0;i < DO_NUM; i++){
         GPIO_InitStruct.Pin = do_ch[i].pin;
@@ -3125,7 +3125,7 @@ static void channels_init(void){
             break;
         case CH_MODE_PWM:
             GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-            GPIO_InitStruct.Pull = GPIO_PULLUP;
+            GPIO_InitStruct.Pull = GPIO_PULLDOWN;
             GPIO_InitStruct.Pin = input_ch[i].pin;
             HAL_GPIO_Init(input_ch[i].port, &GPIO_InitStruct);
             break;
