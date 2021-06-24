@@ -54,7 +54,7 @@ static uint8_t	  one_wire_devices;
 
 static uint8_t		ds18b20_start_converter=0;
 static uint16_t	ds18b20_timeout=0;
-static osThreadId 	Ds18b20Handle;
+//static osThreadId 	Ds18b20Handle;
 #define MAX_ERROR_READ_COUNTER 10
 static uint8_t error_read_counter = 0;
 static uint8_t find_device(void);
@@ -98,7 +98,7 @@ void ds18_task( const void *parameters){
             }
 		}
         ds18b20_start_converter=0;
-        HAL_IWDG_Refresh(&hiwdg);
+        refresh_watchdog();
         osDelay(_DS18B20_UPDATE_INTERVAL_MS);
 	}
 }
@@ -107,7 +107,7 @@ void ds18_task( const void *parameters){
  * */
 static uint8_t find_device(){
     do	{
-        one_wire_init(&one_wire,_DS18B20_GPIO ,_DS18B20_PIN);
+        one_wire_init(&one_wire,input_ch[7].port ,input_ch[7].pin);
         temp_sensor_count = 0;
         while(HAL_GetTick() < 3000){
             osDelay(100);
@@ -122,7 +122,7 @@ static uint8_t find_device(){
         if(temp_sensor_count>0){
             break;
         }
-        HAL_IWDG_Refresh(&hiwdg);
+        refresh_watchdog();
     }while(temp_sensor_count==0);
     for (uint8_t i = 0; i < temp_sensor_count; i++){
         osDelay(50);

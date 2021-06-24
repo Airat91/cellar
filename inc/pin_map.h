@@ -36,6 +36,8 @@
 #define DEBUG_TCK_PIN   GPIO_PIN_14
 #define LCD_CS_PORT     GPIOA
 #define LCD_CS_PIN      GPIO_PIN_15
+    #define ST7735_CS_PORT  LCD_CS_PORT
+    #define ST7735_CS_PIN   LCD_CS_PIN
 
 #define CH_6_PORT       GPIOB
 #define CH_6_PIN        GPIO_PIN_0
@@ -44,10 +46,16 @@
 
 #define LCD_SCK_PORT    GPIOB
 #define LCD_SCK_PIN     GPIO_PIN_3
+    #define ST7735_SCK_PORT LCD_SCK_PORT
+    #define ST7735_SCK_PIN  LCD_SCK_PIN
 #define LCD_RST_PORT    GPIOB
 #define LCD_RST_PIN     GPIO_PIN_4
+    #define ST7735_A0_PORT  LCD_RST_PORT
+    #define ST7735_A0_PIN   LCD_RST_PIN
 #define LCD_MOSI_PORT   GPIOB
 #define LCD_MOSI_PIN    GPIO_PIN_5
+    #define ST7735_MOSI_PORT    LCD_MOSI_PORT
+    #define ST7735_MOSI_PIN     LCD_MOSI_PIN
 #define LCD_LIGHT_PORT  GPIOB
 #define LCD_LIGHT_PIN   GPIO_PIN_6
 #define DO_4_PORT       GPIOB

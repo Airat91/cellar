@@ -19,19 +19,23 @@
 #include "stm32f1xx_hal.h"
 #include "onewire.h"
 #include "ds18_config.h"
+#include "main.h"
 extern TIM_HandleTypeDef htim2;
 void ONEWIRE_DELAY(uint16_t time_us)
 {
-	_DS18B20_TIMER.Instance->CNT = 0;
-	while(_DS18B20_TIMER.Instance->CNT <= time_us);
+    us_tim_delay(time_us);
+    //_DS18B20_TIMER.Instance->CNT = 0;
+    //while(_DS18B20_TIMER.Instance->CNT <= time_us);
 }
 void ONEWIRE_LOW(OneWire_t *gp)
 {
-	gp->GPIOx->BSRR = gp->GPIO_Pin<<16;
+    //HAL_GPIO_WritePin(gp->GPIOx, gp->GPIO_Pin, GPIO_PIN_RESET);
+    gp->GPIOx->BSRR = gp->GPIO_Pin<<16;
 }	
 void ONEWIRE_HIGH(OneWire_t *gp)
 {
-	gp->GPIOx->BSRR = gp->GPIO_Pin;
+    //HAL_GPIO_WritePin(gp->GPIOx, gp->GPIO_Pin, GPIO_PIN_SET);
+    gp->GPIOx->BSRR = gp->GPIO_Pin;
 }	
 void ONEWIRE_INPUT(OneWire_t *gp)
 {
@@ -46,7 +50,7 @@ void ONEWIRE_OUTPUT(OneWire_t *gp)
 {
 	GPIO_InitTypeDef	gpinit;
 	gpinit.Mode = GPIO_MODE_OUTPUT_OD;
-	gpinit.Pull = GPIO_NOPULL;
+    gpinit.Pull = GPIO_NOPULL;
 	gpinit.Speed = GPIO_SPEED_FREQ_MEDIUM;
 	gpinit.Pin = gp->GPIO_Pin;
 	HAL_GPIO_Init(gp->GPIOx,&gpinit);
@@ -54,7 +58,7 @@ void ONEWIRE_OUTPUT(OneWire_t *gp)
 }
 void one_wire_init(OneWire_t* OneWireStruct, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin) 
 {	
-	HAL_TIM_Base_Start(&_DS18B20_TIMER);
+    //HAL_TIM_Base_Start(&_DS18B20_TIMER);
 
 	OneWireStruct->GPIOx = GPIOx;
 	OneWireStruct->GPIO_Pin = GPIO_Pin;
@@ -148,19 +152,23 @@ uint8_t OneWire_ReadBit(OneWire_t* OneWireStruct)
 void OneWire_WriteByte(OneWire_t* OneWireStruct, uint8_t byte) {
 	uint8_t i = 8;
 	/* Write 8 bits */
+    //taskENTER_CRITICAL();
 	while (i--) {
 		/* LSB bit is first */
 		OneWire_WriteBit(OneWireStruct, byte & 0x01);
 		byte >>= 1;
 	}
+    //taskEXIT_CRITICAL();
 }
 
 uint8_t OneWire_ReadByte(OneWire_t* OneWireStruct) {
 	uint8_t i = 8, byte = 0;
+    //taskENTER_CRITICAL();
 	while (i--) {
 		byte >>= 1;
 		byte |= (OneWire_ReadBit(OneWireStruct) << 7);
 	}
+    //taskEXIT_CRITICAL();
 	
 	return byte;
 }

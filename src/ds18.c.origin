@@ -1,0 +1,107 @@
+#include "ds18.h"
+#include "pin_map.h"
+#include "dcts.h"
+#include "FreeRTOS.h"
+#include "cmsis_os.h"
+#include "stm32f1xx_hal_gpio.h"
+#include "stm32f1xx_hal_spi.h"
+#include "stm32f1xx_hal_rcc.h"
+#include "stm32f1xx_hal_tim.h"
+#include "main.h"
+
+/**
+  * @defgroup ds18
+  * @brief work with temperature sensor DS18B20
+  */
+
+/*========= GLOBAL VARIABLES ==========*/
+
+const ds18_pin_t ds18_pin[DS18_CH_NUM] = {
+    {.port = CH_7_PORT, .pin = CH_7_PIN},
+};
+Ds18b20Sensor_t	ds18b20[DS18_CH_NUM];
+uint8_t temp_sensor_count = 0;
+uint8_t data_valid = 0;
+
+/*========= STATIC VARIABLES ==========*/
+
+static OneWire_t one_wire;
+static uint8_t one_wire_devices;
+static uint8_t ds18b20_start_converter = 0;
+static uint16_t	ds18b20_timeout = 0;
+static uint8_t error_read_counter = 0;
+
+/*========= STATIC FUNCTIONS ==========*/
+
+static uint8_t find_device(void);
+
+/*========== FUNCTIONS ==========*/
+
+/**
+ * @brief Init DS18B20 pins
+ * @return  0 - DS18B20 pins init successfull,\n
+ *          -1 - error
+ * @ingroup ds18
+ */
+int ds18_init (void){
+    int result = 0;
+    /* GPIO Ports Clock Enable */
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+
+    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    for(uint8_t i = 0; i < DS18_CH_NUM; i++){
+        GPIO_InitStruct.Pin = ds18_pin[i].pin;
+        HAL_GPIO_Init (ds18_pin[i].port, &GPIO_InitStruct);
+    }
+
+    return result;
+}
+
+/**
+ * @brief Deinit AM2302 pins
+ * @ingroup am2302
+ */
+void ds18_deinit(void){
+    for(uint8_t i = 0; i < DS18_CH_NUM; i++){
+        HAL_GPIO_DeInit(ds18_pin[i].port, ds18_pin[i].pin);
+    }
+}
+
+/**
+ * @brief find_device
+ * @return
+ */
+static uint8_t find_device(void){
+    do	{
+        one_wire_init(&one_wire,ds18_pin[0].port ,ds18_pin[0].pin);
+        temp_sensor_count = 0;
+        while(HAL_GetTick() < 3000){
+            osDelay(100);
+        }
+        one_wire_devices = one_wire_first(&one_wire);
+        while (one_wire_devices){
+            osDelay(100);
+            temp_sensor_count++;
+            one_wire_get_full_rom(&one_wire, ds18b20[temp_sensor_count-1].Address);
+            one_wire_devices = one_wire_next(&one_wire);
+        }
+        if(temp_sensor_count>0){    //check compare with 0
+            break;
+        }
+        refresh_watchdog();
+    }while(temp_sensor_count == 0);
+    for (uint8_t i = 0; i < temp_sensor_count; i++){
+        osDelay(50);
+        ds18b20_set_resolution(&one_wire, ds18b20[i].Address, DS18B20_Resolution_12bits);
+        osDelay(50);
+        ds18b20_disable_alarm_temperature(&one_wire,  ds18b20[i].Address);
+    }
+
+    return temp_sensor_count;
+}
