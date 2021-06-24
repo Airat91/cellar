@@ -60,6 +60,7 @@ typedef struct {
     uint16_t parity_err_cnt;
     uint16_t frame_err_cnt;
     uint16_t noise_err_cnt;
+    uint16_t tx_err_cnt;
     uint16_t timeout;
     uint32_t timeout_last;
     uint16_t conn_lost_timeout;
