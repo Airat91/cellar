@@ -81,6 +81,7 @@
 #define LCD_DISP 1
 #define ST7735_DISP 2
 #define DISP ST7735_DISP // LCD_DISP or ST7735_DISP
+#define DISP_MAX_LINES  8
 
 /* Private variables ---------------------------------------------------------*/
 RTC_HandleTypeDef hrtc;
@@ -559,7 +560,7 @@ void rtc_task(void const * argument){
 #if(DISP == LCD_DISP)
 #define display_task_period 100
 #elif(DISP == ST7735_DISP)
-#define display_task_period 1000
+#define display_task_period 250
 #endif // DISP
 void display_task(void const * argument){
     (void)argument;
@@ -572,6 +573,7 @@ void display_task(void const * argument){
     LCD_backlight_timer_init();
     LCD_backlight_on();
     st7735_init();
+    st7735_fill_rect(0,0,160,128,ST7735_WHITE);
 #endif
     u8 tick = 0;
     u8 tick_2 = 0;
@@ -582,7 +584,10 @@ void display_task(void const * argument){
 #if(DISP == LCD_DISP)
         LCD_clr();
 #elif(DISP == ST7735_DISP)
-        ST7735_fill_rect(0,0,128,64,ST7735_WHITE);
+        if(last_page != selectedMenuItem->Page){
+            st7735_fill_rect(0,0,160,128,ST7735_WHITE);
+            last_page = selectedMenuItem->Page;
+        }
 #endif
         if(last_page != selectedMenuItem->Page){
             tick = 0;
@@ -609,7 +614,7 @@ void display_task(void const * argument){
 #if(DISP == LCD_DISP)
         LCD_update();
 #elif(DISP == ST7735_DISP)
-        // update display
+        //st7735_update();
 #endif
         if((LCD.auto_off != 0)&&(LCD.backlight == LCD_BACKLIGHT_ON)){
             LCD.auto_off_timeout += display_task_period;
@@ -864,7 +869,7 @@ static void error_page_print(menu_page_t page){
 
     sprintf(string, "<íàçàä");
     st7735_xy(0,0);
-    ST7735_fill_rect(0,0,42,11,ST7735_BLACK);
+    st7735_fill_rect(0,0,42,11,ST7735_BLACK);
     st7735_print(string,&Font_7x10,ST7735_WHITE);
 #endif // DISP
 }
@@ -970,14 +975,15 @@ static void main_page_print(u8 tick){
         }
     }
 #elif(DISP == ST7735_DISP)
-    st7735_xy(76,26);
+    st7735_fill_rect(92,94,17,17,ST7735_WHITE);
+    st7735_xy(92,94);
     if(dcts_rele[FAN_CONVECTION].state.control == 0){
         st7735_print_char(6,&Icon_16x16,ST7735_BLACK);
     }else{
         switch(tick%4){
         case 0:
             st7735_print_char(4,&Icon_16x16,ST7735_BLACK);
-            st7735_xy(21,31);
+            /*st7735_xy(21,31);
             st7735_print_char(15,&Icon_16x16,ST7735_BLACK);
             st7735_xy(96,31);
             st7735_print_char(13,&Icon_16x16,ST7735_BLACK);
@@ -994,11 +1000,11 @@ static void main_page_print(u8 tick){
             st7735_xy(59,12);
             st7735_print_char(14,&Icon_16x16,ST7735_BLACK);
             st7735_xy(86,12);
-            st7735_print_char(14,&Icon_16x16,ST7735_BLACK);
+            st7735_print_char(14,&Icon_16x16,ST7735_BLACK);*/
             break;
         case 1:
             st7735_print_char(5,&Icon_16x16,ST7735_BLACK);
-            st7735_xy(21,37);
+            /*st7735_xy(21,37);
             st7735_print_char(15,&Icon_16x16,ST7735_BLACK);
             st7735_xy(96,25);
             st7735_print_char(13,&Icon_16x16,ST7735_BLACK);
@@ -1009,19 +1015,19 @@ static void main_page_print(u8 tick){
             st7735_print_char(12,&Icon_16x16,ST7735_BLACK);
             st7735_xy(88,50);
             st7735_print_char(12,&Icon_16x16,ST7735_BLACK);
-            ST7735_fill_rect(88,50,4,14,ST7735_WHITE);
+            st7735_fill_rect(88,50,4,14,ST7735_WHITE);
 
             st7735_xy(28,12);
             st7735_print_char(14,&Icon_16x16,ST7735_BLACK);
-            ST7735_fill_rect(41,12,10,16,ST7735_WHITE);
+            st7735_fill_rect(41,12,10,16,ST7735_WHITE);
             st7735_xy(52,12);
             st7735_print_char(14,&Icon_16x16,ST7735_BLACK);
             st7735_xy(79,12);
-            st7735_print_char(14,&Icon_16x16,ST7735_BLACK);
+            st7735_print_char(14,&Icon_16x16,ST7735_BLACK);*/
             break;
         case 2:
             st7735_print_char(2,&Icon_16x16,ST7735_BLACK);
-            st7735_xy(21,42);
+            /*st7735_xy(21,42);
             st7735_print_char(15,&Icon_16x16,ST7735_BLACK);
             st7735_xy(21,20);
             st7735_print_char(15,&Icon_16x16,ST7735_BLACK);
@@ -1038,18 +1044,18 @@ static void main_page_print(u8 tick){
             st7735_xy(45,12);
             st7735_print_char(14,&Icon_16x16,ST7735_BLACK);
             st7735_xy(72,12);
-            st7735_print_char(14,&Icon_16x16,ST7735_BLACK);
+            st7735_print_char(14,&Icon_16x16,ST7735_BLACK);*/
             break;
         case 3:
             st7735_print_char(3,&Icon_16x16,ST7735_BLACK);
-            st7735_xy(21,25);
+            /*st7735_xy(21,25);
             st7735_print_char(15,&Icon_16x16,ST7735_BLACK);
             st7735_xy(96,37);
             st7735_print_char(13,&Icon_16x16,ST7735_BLACK);
 
             st7735_xy(25,50);
             st7735_print_char(12,&Icon_16x16,ST7735_BLACK);
-            ST7735_fill_rect(25,48,2,16,ST7735_WHITE);
+            st7735_fill_rect(25,48,2,16,ST7735_WHITE);
             st7735_xy(52,50);
             st7735_print_char(12,&Icon_16x16,ST7735_BLACK);
             st7735_xy(79,50);
@@ -1061,7 +1067,7 @@ static void main_page_print(u8 tick){
             st7735_print_char(14,&Icon_16x16,ST7735_BLACK);
             st7735_xy(93,12);
             st7735_print_char(14,&Icon_16x16,ST7735_BLACK);
-            ST7735_fill_rect(104,12,5,16,ST7735_WHITE);
+            st7735_fill_rect(104,12,5,16,ST7735_WHITE);*/
             break;
         }
     }
@@ -1084,20 +1090,23 @@ static void main_page_print(u8 tick){
     }
     LCD_print(string,&Font_5x7,LCD_COLOR_BLACK); 
 #elif(DISP == ST7735_DISP)
-    st7735_xy(0,56);
+    st7735_fill_rect(0,111,36,17,ST7735_WHITE);
+    st7735_xy(0,119);
     if(dcts_meas[TMPR_OUT].valid == 1){
         sprintf(string,"%.1f%s",(double)dcts_meas[TMPR_OUT].value,dcts_meas[TMPR_OUT].unit_cyr);
+        st7735_print(string,&Font_5x7,ST7735_BLACK);
     }else{
         sprintf(string,"Îáðûâ");
+        st7735_print(string,&Font_5x7,ST7735_RED);
     }
-    st7735_print(string,&Font_5x7,ST7735_BLACK);
-    st7735_xy(0,48);
+    st7735_xy(0,111);
     if(dcts_meas[HUM_OUT].valid == 1){
         sprintf(string,"%.1f%s",(double)dcts_meas[HUM_OUT].value,dcts_meas[HUM_OUT].unit_cyr);
+        st7735_print(string,&Font_5x7,ST7735_BLACK);
     }else{
         sprintf(string,"äàò÷èêà");
+        st7735_print(string,&Font_5x7,ST7735_RED);
     }
-    st7735_print(string,&Font_5x7,ST7735_BLACK);
 #endif // DISP
 
     //fan in
@@ -1122,7 +1131,8 @@ static void main_page_print(u8 tick){
         }
     }
 #elif(DISP == ST7735_DISP)
-    st7735_xy(3,31);
+    st7735_fill_rect(3,94,17,17,ST7735_WHITE);
+    st7735_xy(3,94);
     if(dcts_rele[FAN_IN].state.control == 0){
         st7735_print_char(6,&Icon_16x16,ST7735_BLACK);
     }else{
@@ -1156,9 +1166,10 @@ static void main_page_print(u8 tick){
         LCD_print_char(18,&Icon_16x16,LCD_COLOR_BLACK);
     }
 #elif(DISP == ST7735_DISP)
-    ST7735_fill_rect(0,21,1,27,ST7735_BLACK);
-    ST7735_fill_rect(20,21,1,27,ST7735_BLACK);
-    st7735_xy(3,12);
+    st7735_fill_rect(1,80,1,31,ST7735_BLACK);
+    st7735_fill_rect(20,80,1,31,ST7735_BLACK);
+    st7735_fill_rect(3,76,17,17,ST7735_WHITE);
+    st7735_xy(3,76);
     if(dcts_act[VALVE_IN].set_value < 10.0f){
         st7735_print_char(16,&Icon_16x16,ST7735_BLACK);
     }else if((dcts_act[VALVE_IN].set_value >= 10.0f)&&(dcts_act[VALVE_IN].set_value <= 90.0f)){
@@ -1181,9 +1192,10 @@ static void main_page_print(u8 tick){
         LCD_print_char(18,&Icon_16x16,LCD_COLOR_BLACK);
     }
 #elif(DISP == ST7735_DISP)
-    ST7735_fill_rect(107,52,1,11,ST7735_BLACK);
-    ST7735_fill_rect(126,52,1,11,ST7735_BLACK);
-    st7735_xy(110,43);
+    st7735_fill_rect(139,80,1,48,ST7735_BLACK);
+    st7735_fill_rect(158,80,1,48,ST7735_BLACK);
+    st7735_fill_rect(141,76,17,17,ST7735_WHITE);
+    st7735_xy(141,76);
     if(dcts_act[VALVE_OUT].set_value < 10.0f){
         st7735_print_char(16,&Icon_16x16,ST7735_BLACK);
     }else if((dcts_act[VALVE_OUT].set_value >= 10.0f)&&(dcts_act[VALVE_OUT].set_value <= 90.0f)){
@@ -1209,7 +1221,8 @@ static void main_page_print(u8 tick){
         }
     }
 #elif(DISP == ST7735_DISP)
-    st7735_xy(94,0);
+    st7735_fill_rect(126,0,17,17,ST7735_WHITE);
+    st7735_xy(126,0);
     if(dcts_rele[WTR_PUMP].state.control == 0){
         st7735_print_char(20,&Icon_16x16,ST7735_BLACK);
     }else{
@@ -1252,7 +1265,8 @@ static void main_page_print(u8 tick){
         }
     }
 #elif(DISP == ST7735_DISP)
-    st7735_xy(111,0);
+    st7735_fill_rect(143,0,17,17,ST7735_WHITE);
+    st7735_xy(143,0);
     if(dcts_meas[WTR_MIN_RES].value > config.params.wtr_min_ref){
         //empty
         st7735_print_char(22,&Icon_16x16,ST7735_BLACK);
@@ -1299,20 +1313,21 @@ static void main_page_print(u8 tick){
         }
     }
 #elif(DISP == ST7735_DISP)
-    st7735_xy(40,26);
+    st7735_fill_rect(52,94,17,17,ST7735_WHITE);
+    st7735_xy(52,94);
     if(dcts_rele[HEATER].state.control == 1){
         switch(tick%4){
         case 0:
-            st7735_print_char(7,&Icon_16x16,ST7735_BLACK);
+            st7735_print_char(7,&Icon_16x16,ST7735_RED);
             break;
         case 1:
-            st7735_print_char(8,&Icon_16x16,ST7735_BLACK);
+            st7735_print_char(8,&Icon_16x16,ST7735_RED);
             break;
         case 2:
-            st7735_print_char(9,&Icon_16x16,ST7735_BLACK);
+            st7735_print_char(9,&Icon_16x16,ST7735_RED);
             break;
         case 3:
-            st7735_print_char(10,&Icon_16x16,ST7735_BLACK);
+            st7735_print_char(10,&Icon_16x16,ST7735_RED);
             break;
         }
     }
@@ -1325,9 +1340,10 @@ static void main_page_print(u8 tick){
         LCD_print_char(11,&Icon_16x16,LCD_COLOR_BLACK);
     }
 #elif(DISP == ST7735_DISP)
-    st7735_xy(58,26);
+    st7735_fill_rect(72,94,17,17,ST7735_WHITE);
+    st7735_xy(72,94);
     if(dcts_rele[FREEZER].state.control == 1){
-        st7735_print_char(11,&Icon_16x16,ST7735_BLACK);
+        st7735_print_char(11,&Icon_16x16,ST7735_BLUE);
     }
 #endif // DISP
 
@@ -1363,6 +1379,7 @@ static void main_page_print(u8 tick){
     LCD_set_xy(align_text_right(string,Font_5x7)-36,0);
     LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
 #elif(DISP == ST7735_DISP)
+    st7735_fill_rect(0,0,94,17,ST7735_WHITE);
     if(dcts_meas[TMPR_IN_AVG].valid == 1){
         if((dcts_act[TMPR_IN_HEATING].state.control == 1)||(dcts_act[TMPR_IN_COOLING].state.control == 1)){
             if((dcts_act[TMPR_IN_HEATING].state.control == 1)&&(dcts_act[TMPR_IN_COOLING].state.control == 1)){
@@ -1400,9 +1417,10 @@ static void main_page_print(u8 tick){
     LCD_set_xy(align_text_center(string,Font_5x7),45);
     LCD_print(string,&Font_5x7,LCD_COLOR_BLACK);
 #elif(DISP == ST7735_DISP)
+    st7735_fill_rect(16,45,129,27,ST7735_WHITE);
     sprintf(string,"%02d:%02d:%02d",dcts.dcts_rtc.hour,dcts.dcts_rtc.minute,dcts.dcts_rtc.second);
-    st7735_xy(align_text_center(string,Font_5x7),45);
-    st7735_print(string,&Font_5x7,ST7735_BLACK);
+    st7735_xy(align_text_center(string,Font_16x26)+16,45);
+    st7735_print(string,&Font_16x26,ST7735_GREEN);
 #endif // DISP
 }
 
@@ -1418,8 +1436,8 @@ static void print_header(void){
 #elif(DISP == ST7735_DISP)
     menuItem* temp = selectedMenuItem->Parent;
     sprintf(string, temp->Text);
-    ST7735_fill_rect(0,53,127,10,ST7735_BLACK);
-    st7735_xy(align_text_center(string, Font_7x10),52);
+    st7735_fill_rect(0,116,160,12,ST7735_ORANGE);
+    st7735_xy(align_text_center(string, Font_7x10)+16,116);
     st7735_print(string,&Font_7x10,ST7735_WHITE);
 #endif // DISP
 }
@@ -1429,47 +1447,44 @@ static void menu_page_print(u8 tick){
     print_header();
 
     menuItem* temp = selectedMenuItem->Parent;
+#if(DISP == LCD_DISP)
     if(temp->Child_num >= 3){
         //print previous
-#if(DISP == LCD_DISP)
         temp = selectedMenuItem->Previous;
         sprintf(string, temp->Text);
         LCD_set_xy(align_text_center(string, Font_7x10),39);
         LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-#elif(DISP == ST7735_DISP)
-        temp = selectedMenuItem->Previous;
-        sprintf(string, temp->Text);
-        st7735_xy(align_text_center(string, Font_7x10),39);
-        st7735_print(string,&Font_7x10,ST7735_BLACK);
-#endif // DISP
     }
 
     //print selected
-#if(DISP == LCD_DISP)
     sprintf(string, selectedMenuItem->Text);
     LCD_set_xy(align_text_center(string, Font_7x10),26);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
     LCD_invert_area(5,26,120,38);
     LCD_invert_area(6,27,119,37);
-#elif(DISP == ST7735_DISP)
-    sprintf(string, selectedMenuItem->Text);
-    ST7735_fill_rect(5,26,115,12,ST7735_BLACK);
-    ST7735_fill_rect(6,27,113,10,ST7735_WHITE);
-    st7735_xy(align_text_center(string, Font_7x10),26);
-    st7735_print(string,&Font_7x10,ST7735_BLACK);
-#endif // DISP
 
     //print next
-#if(DISP == LCD_DISP)
     temp = selectedMenuItem->Next;
     sprintf(string, temp->Text);
     LCD_set_xy(align_text_center(string, Font_7x10),14);
     LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
 #elif(DISP == ST7735_DISP)
-    temp = selectedMenuItem->Next;
-    sprintf(string, temp->Text);
-    st7735_xy(align_text_center(string, Font_7x10),14);
-    st7735_print(string,&Font_7x10,ST7735_BLACK);
+    uint8_t line_pointer = 0;
+
+    sprintf(string, selectedMenuItem->Text);
+    st7735_fill_rect(5,102,150,13,ST7735_BLUE);
+    st7735_xy(align_text_center(string, Font_7x10)+16,102);
+    st7735_print(string,&Font_7x10,ST7735_WHITE);
+    line_pointer++;
+
+    menuItem* next = selectedMenuItem->Next;
+    while((line_pointer < temp->Child_num)&&(line_pointer < DISP_MAX_LINES)){
+        sprintf(string, next->Text);
+        st7735_xy(align_text_center(string, Font_7x10)+16,102-13*line_pointer);
+        st7735_print(string,&Font_7x10,ST7735_BLACK);
+        next = next->Next;
+        line_pointer++;
+    }
 #endif // DISP
 
     print_back();
@@ -1484,9 +1499,9 @@ static void value_print(u8 tick){
     int next = 0;
 
     menuItem* temp = selectedMenuItem->Parent;
+#if(DISP == LCD_DISP)
     if(temp->Child_num >= 3){
         //print previous name
-#if(DISP == LCD_DISP)
         temp = selectedMenuItem->Previous;
         sprintf(string, temp->Text);
         LCD_set_xy(2,39);
@@ -1499,24 +1514,9 @@ static void value_print(u8 tick){
             // invalid value
             LCD_fill_area(84,45,127,45,LCD_COLOR_BLACK);
         }
-#elif(DISP == ST7735_DISP)
-        temp = selectedMenuItem->Previous;
-        sprintf(string, temp->Text);
-        st7735_xy(2,39);
-        st7735_print(string,&Font_7x10,ST7735_BLACK);
-        ST7735_fill_rect(80,39,47,10,ST7735_WHITE);
-        prev = get_param_value(string, temp->Page);
-        st7735_xy(align_text_right(string,Font_7x10),39);
-        st7735_print(string,&Font_7x10,ST7735_BLACK);
-        if(prev == -2){
-            // invalid value
-            ST7735_fill_rect(84,45,127,45,ST7735_BLACK);
-        }
-#endif // DISP
     }
 
     //print selected name
-#if(DISP == LCD_DISP)
     sprintf(string, selectedMenuItem->Text);
     LCD_set_xy(2,26);
     LCD_print_ticker(string,&Font_7x10,LCD_COLOR_BLACK,11,tick);
@@ -1530,24 +1530,8 @@ static void value_print(u8 tick){
 
     LCD_invert_area(0,26,82,38);
     LCD_invert_area(1,27,81,37);
-#elif(DISP == ST7735_DISP)
-    sprintf(string, selectedMenuItem->Text);
-    st7735_xy(2,26);
-    st7735_print(string,&Font_7x10,ST7735_BLACK);
-    cur = get_param_value(string, selectedMenuItem->Page);
-    st7735_xy(align_text_right(string,Font_7x10),26);
-    st7735_print(string,&Font_7x10,ST7735_BLACK);
-    if(cur == -2){
-        // invalid value
-        ST7735_fill_rect(84,32,43,1,ST7735_BLACK);
-    }
-
-    ST7735_fill_rect(0,26,82,12,ST7735_BLACK);
-    ST7735_fill_rect(1,27,80,10,ST7735_WHITE);
-#endif // DISP
 
     //print next name
-#if(DISP == LCD_DISP)
     temp = selectedMenuItem->Next;
     sprintf(string, temp->Text);
     LCD_set_xy(2,14);
@@ -1561,20 +1545,43 @@ static void value_print(u8 tick){
         LCD_fill_area(84,20,127,20,LCD_COLOR_BLACK);
     }
 #elif(DISP == ST7735_DISP)
-    temp = selectedMenuItem->Next;
-    sprintf(string, temp->Text);
-    st7735_xy(2,14);
-    st7735_print(string,&Font_7x10,ST7735_BLACK);
-    ST7735_fill_rect(80,14,47,10,ST7735_WHITE);
-    next = get_param_value(string, temp->Page);
-    st7735_xy(align_text_right(string,Font_7x10),14);
-    st7735_print(string,&Font_7x10,ST7735_BLACK);
-    if(next == -2){
+    uint8_t line_pointer = 0;
+
+    sprintf(string, selectedMenuItem->Text);
+    st7735_fill_rect(0,102,96,13,ST7735_BLUE);
+    st7735_xy(2,102);
+    st7735_print(string,&Font_7x10,ST7735_WHITE);
+    cur = get_param_value(string, selectedMenuItem->Page);
+    st7735_fill_rect(96,102,64,11,ST7735_WHITE);
+    st7735_xy(align_text_right(string,Font_7x10)+32,102);
+    if(cur == -2){
         // invalid value
-        ST7735_fill_rect(84,20,43,1,ST7735_BLACK);
+        st7735_print(string,&Font_7x10,ST7735_RED);
+    }else{
+        st7735_print(string,&Font_7x10,ST7735_BLACK);
+    }
+    line_pointer++;
+
+    menuItem* next_page = selectedMenuItem->Next;
+    while((line_pointer < temp->Child_num)&&(line_pointer < DISP_MAX_LINES)){
+        sprintf(string, next_page->Text);
+        st7735_xy(2,102-13*line_pointer);
+        st7735_print(string,&Font_7x10,ST7735_BLACK);
+        cur = get_param_value(string, next_page->Page);
+        st7735_fill_rect(96,102-13*line_pointer,64,11,ST7735_WHITE);
+        st7735_xy(align_text_right(string,Font_7x10)+32,102-13*line_pointer);
+        if(cur == -2){
+            // invalid value
+            st7735_print(string,&Font_7x10,ST7735_RED);
+        }else{
+            st7735_print(string,&Font_7x10,ST7735_BLACK);
+        }
+        next_page = next_page->Next;
+        line_pointer++;
     }
 #endif // DISP
 
+    st7735_fill_rect(0,0,160,9,ST7735_WHITE);
     print_back();
 
     if(navigation_style == MENU_NAVIGATION){
@@ -1592,9 +1599,9 @@ static void value_print(u8 tick){
         }
 #elif(DISP == ST7735_DISP)
         if(edit_val.digit < 0){
-            ST7735_fill_rect(127-(u8)(edit_val.digit+edit_val.select_shift)*edit_val.select_width,26,edit_val.select_width,1,ST7735_BLACK);
+            st7735_fill_rect(159-(u8)(edit_val.digit+edit_val.select_shift)*edit_val.select_width,102,edit_val.select_width,1,ST7735_BLACK);
         }else{
-            ST7735_fill_rect(127-(u8)(edit_val.digit+edit_val.select_shift+1)*edit_val.select_width,26,edit_val.select_width,1,ST7735_BLACK);
+            st7735_fill_rect(159-(u8)(edit_val.digit+edit_val.select_shift+1)*edit_val.select_width,102,edit_val.select_width,1,ST7735_BLACK);
         }
 #endif // DISP
     }
@@ -2649,8 +2656,8 @@ static void save_page_print (u8 tick){
         break;
     }
 #elif(DISP == ST7735_DISP)
-    ST7735_fill_rect(5,30,118,28,ST7735_BLACK);
-    ST7735_fill_rect(6,31,116,26,ST7735_WHITE);
+    st7735_fill_rect(5,30,118,28,ST7735_BLACK);
+    st7735_fill_rect(6,31,116,26,ST7735_WHITE);
     sprintf(string, "ÑÎÕÐÀÍÅÍÈÅ ÍÎÂÛÕ");
     st7735_xy(align_text_center(string, Font_7x10),42);
     st7735_print(string,&Font_7x10,ST7735_BLACK);
@@ -2661,13 +2668,13 @@ static void save_page_print (u8 tick){
     st7735_print(1,&Icon_16x16,ST7735_BLACK);
     switch(tick%4){
     case 0:
-        ST7735_fill_rect(55,10,16,12,ST7735_BLACK);
+        st7735_fill_rect(55,10,16,12,ST7735_BLACK);
         break;
     case 1:
-        ST7735_fill_rect(55,14,16,8,ST7735_BLACK);
+        st7735_fill_rect(55,14,16,8,ST7735_BLACK);
         break;
     case 2:
-        ST7735_fill_rect(55,18,16,4,ST7735_BLACK);
+        st7735_fill_rect(55,18,16,4,ST7735_BLACK);
         break;
     }
 #endif // DISP
@@ -3200,7 +3207,7 @@ static void print_back(void){
     LCD_invert_area(0,0,30,8);
 #elif(DISP == ST7735_DISP)
     sprintf(string, "<íàçàä");
-    ST7735_fill_rect(0,0,30,8,ST7735_BLACK);
+    st7735_fill_rect(0,0,32,9,ST7735_BLACK);
     st7735_xy(0,0);
     st7735_print(string,&Font_5x7,ST7735_WHITE);
 #endif // DISP
@@ -3215,8 +3222,8 @@ static void print_enter_right(void){
     LCD_invert_area(97,0,127,8);
 #elif(DISP == ST7735_DISP)
     sprintf(string, "âûáîð>");
-    ST7735_fill_rect(97,0,30,8,ST7735_BLACK);
-    st7735_xy(align_text_right(string,Font_5x7),0);
+    st7735_fill_rect(128,0,32,9,ST7735_BLACK);
+    st7735_xy(align_text_right(string,Font_5x7)+32,0);
     st7735_print(string,&Font_5x7,ST7735_WHITE);
 #endif // DISP
 }
@@ -3230,8 +3237,8 @@ static void print_enter_ok(void){
     LCD_invert_area(51,0,76,8);
 #elif(DISP == ST7735_DISP)
     sprintf(string, "ââîä*");
-    ST7735_fill_rect(51,0,25,8,ST7735_BLACK);
-    st7735_xy(align_text_center(string,Font_5x7),0);
+    st7735_fill_rect(66,0,27,9,ST7735_BLACK);
+    st7735_xy(align_text_center(string,Font_5x7)+16,0);
     st7735_print(string,&Font_5x7,ST7735_WHITE);
 #endif // DISP
 }
@@ -3245,8 +3252,8 @@ static void print_change(void){
     LCD_invert_area(82,0,127,8);
 #elif(DISP == ST7735_DISP)
     sprintf(string, "èçìåíèòü>");
-    ST7735_fill_rect(82,0,47,8,ST7735_BLACK);
-    st7735_xy(align_text_right(string,Font_5x7),0);
+    st7735_fill_rect(113,0,47,9,ST7735_BLACK);
+    st7735_xy(align_text_right(string,Font_5x7)+32,0);
     st7735_print(string,&Font_5x7,ST7735_WHITE);
 #endif // DISP
 }

@@ -28,6 +28,8 @@ st7735_t st7735 = {
     .auto_off_timeout = 0,
 };
 
+uint16_t st7735_disp[ST7735_MAX_X*ST7735_MAX_Y] = {0};
+
 /*========== FUNCTIONS ==========*/
 
 int st7735_init (void){
@@ -153,7 +155,7 @@ int st7735_init (void){
 
     //===========================
 
-    char string[50];
+    /*char string[50];
     strcpy(string,"Hello world!");
 
     ST7735_fill_rect(0,0,160,128,ST7735_BLACK);
@@ -166,7 +168,7 @@ int st7735_init (void){
     st7735_print(string, &Font_7x10, ST7735_RED);
 
     osDelay(1000);
-    ST7735_fill_rect(0,0,160,128,ST7735_BLACK);
+    ST7735_fill_rect(0,0,160,128,ST7735_BLACK);*/
 
     return result;
 }
@@ -346,7 +348,7 @@ int st7735_draw_pixel(uint8_t x, uint8_t y, uint16_t color){
     return result;
 }
 
-int ST7735_fill_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t color){
+int st7735_fill_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t color){
     int result = 0;
     if(x + w - 1 > ST7735_MAX_X){
         w = ST7735_MAX_X - x;
@@ -433,6 +435,18 @@ static int st7735_SetAddressWindow(uint8_t x0, uint8_t y0, uint8_t w, uint8_t h)
         st7735_array(data, 4);
 
         st7735_cmd(ST7735_RAMWR);
+    }
+
+    return result;
+}
+
+int st7735_update(void){
+    int result = 0;
+    st7735_SetAddressWindow(0, 0, ST7735_MAX_X - 1,ST7735_MAX_Y - 1);
+    st7735.x = 0;
+    st7735.y = 0;
+    for(uint16_t i = 0; i < ST7735_MAX_X*ST7735_MAX_Y; i++){
+        st7735_array((uint8_t*)st7735_disp[i*2], 2);
     }
 
     return result;

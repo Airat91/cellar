@@ -91,6 +91,7 @@ typedef enum{
     ST7735_CYAN    = 0x07FF,
     ST7735_MAGENTA = 0xF81F,
     ST7735_YELLOW  = 0xFFE0,
+    ST7735_ORANGE  = 0xF8E3,
     ST7735_WHITE   = 0xFFFF,
 }st7735_color_t;
 
@@ -106,6 +107,7 @@ typedef struct {
 /*========= GLOBAL VARIABLES ==========*/
 
 extern st7735_t st7735;
+extern uint16_t st7735_disp[];
 
 /*========== FUNCTION PROTOTYPES ==========*/
 
@@ -119,9 +121,10 @@ int st7735_cmd(uint8_t cmd);
 int st7735_array(uint8_t* array, uint8_t len);
 int st7735_data(uint8_t data);
 int st7735_draw_pixel(uint8_t x, uint8_t y, uint16_t color);
-int ST7735_fill_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t color);
+int st7735_fill_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t color);
 int st7735_xy(uint8_t x, uint8_t y);
 int st7735_print_char(char ch, FontDef_t* font, uint16_t color);
 int st7735_print(char* string, FontDef_t* font, uint16_t color);
+int st7735_update(void);
 
 #endif // ST7735_H
