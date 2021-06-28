@@ -85,6 +85,7 @@
 #define MEAS_NUM 16
 #define ACT_NUM 6
 #define RELE_NUM 6
+#define ARRAY_NUM 2
 #define SAVED_PARAMS_SIZE 44
 #if(STM32F103xB == 1)
 #define BKP_REG_NUM 10
