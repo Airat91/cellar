@@ -17,7 +17,7 @@
 
 /*========= GLOBAL VARIABLES ==========*/
 
-static SPI_HandleTypeDef st7735_spi = {0};
+SPI_HandleTypeDef st7735_spi = {0};
 static int st7735_SetAddressWindow(uint8_t x0, uint8_t y0, uint8_t w, uint8_t h);
 st7735_t st7735 = {
     .x = 0,
@@ -26,6 +26,13 @@ st7735_t st7735 = {
     .backlight = 0,
     .auto_off = 0,
     .auto_off_timeout = 0,
+};
+
+static spi_buf_t spi_send_buf = {
+    .buff = {0},
+    .len = 0,
+    .ptr = 0,
+    .sending = 0,
 };
 
 uint16_t st7735_disp[ST7735_MAX_X*ST7735_MAX_Y] = {0};
@@ -205,6 +212,7 @@ int st7735_spi_init (void){
     }
     __HAL_SPI_ENABLE(&st7735_spi);
     SPI_1LINE_TX(&st7735_spi);
+    HAL_NVIC_EnableIRQ(SPI1_IRQn);
     return result;
 }
 
@@ -275,7 +283,7 @@ int st7735_cmd(uint8_t cmd){
     int timeout = 0;
     HAL_GPIO_WritePin(ST7735_A0_PORT, ST7735_A0_PIN, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(ST7735_CS_PORT, ST7735_CS_PIN, GPIO_PIN_RESET);
-    if(HAL_SPI_Transmit(&st7735_spi,&cmd,1,HAL_MAX_DELAY) == HAL_OK){
+    if(HAL_SPI_Transmit_IT(&st7735_spi,&cmd,1) == HAL_OK){
         while((((uint16_t)st7735_spi.Instance->SR & SPI_SR_BSY)&&(timeout < 5000))){
             timeout++;
             osDelay(1);
@@ -295,8 +303,8 @@ int st7735_array(uint8_t* array, uint8_t len){
     int timeout = 0;
     HAL_GPIO_WritePin(ST7735_A0_PORT, ST7735_A0_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(ST7735_CS_PORT, ST7735_CS_PIN, GPIO_PIN_RESET);
-    while(len > 0){
-        if(HAL_SPI_Transmit(&st7735_spi,array,1,HAL_MAX_DELAY) == HAL_OK){
+    //while(len > 0){
+        if(HAL_SPI_Transmit_IT(&st7735_spi,array,len) == HAL_OK){
             while((((uint16_t)st7735_spi.Instance->SR & SPI_SR_BSY)&&(timeout < 5000))){
                 timeout++;
                 osDelay(1);
@@ -307,9 +315,9 @@ int st7735_array(uint8_t* array, uint8_t len){
         }else{
             result = -1;
         }
-        array++;
+        /*array++;
         len--;
-    }
+    }*/
     HAL_GPIO_WritePin(ST7735_CS_PORT, ST7735_CS_PIN,GPIO_PIN_SET);
     return result;
 }
@@ -319,7 +327,7 @@ int st7735_data(uint8_t data){
     int timeout = 0;
     HAL_GPIO_WritePin(ST7735_A0_PORT, ST7735_A0_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(ST7735_CS_PORT, ST7735_CS_PIN, GPIO_PIN_RESET);
-    if(HAL_SPI_Transmit(&st7735_spi,&data,1,HAL_MAX_DELAY) == HAL_OK){
+    if(HAL_SPI_Transmit_IT(&st7735_spi,&data,1) == HAL_OK){
         while((((uint16_t)st7735_spi.Instance->SR & SPI_SR_BSY)&&(timeout < 5000))){
             timeout++;
             osDelay(1);
@@ -437,6 +445,21 @@ static int st7735_SetAddressWindow(uint8_t x0, uint8_t y0, uint8_t w, uint8_t h)
         st7735_cmd(ST7735_RAMWR);
     }
 
+    return result;
+}
+
+int st7735_send(uint32_t timeout_us){
+    int result = 0;
+    uint32_t start = us_tim_get_value();
+    uint32_t timeout = 0;
+    while((spi_send_buf.sending)&&(timeout < timeout_us)){
+        timeout = us_tim_get_value() - start;
+    }
+    if(spi_send_buf.sending == 0){
+        HAL_SPI_Transmit_IT(&st7735_spi,spi_send_buf.buff,spi_send_buf.len);
+    }else{
+        result = -1;
+    }
     return result;
 }
 
