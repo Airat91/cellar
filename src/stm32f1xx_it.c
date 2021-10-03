@@ -40,6 +40,7 @@
 #include "main.h"
 #include "uart.h"
 #include "LCD.h"
+#include "st7735.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -263,6 +264,11 @@ void USART1_IRQHandler(void)
   uart_handle();
 
   /* USER CODE END USART1_IRQn 1 */
+}
+
+void SPI1_IRQHandler(void){
+    HAL_SPI_IRQHandler(&st7735_spi);
+    st7735_spi_handler();
 }
 
 /* USER CODE BEGIN 1 */

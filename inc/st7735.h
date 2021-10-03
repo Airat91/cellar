@@ -26,6 +26,8 @@
 //#define ST7735_ROTATION (ST7735_MADCTL_MX | ST7735_MADCTL_MV) // rotate left
 #define ST7735_ROTATION (ST7735_MADCTL_MV | ST7735_MADCTL_MH)  // upside down
 
+#define ST7735_SPI_MAX_BUFF 256
+
 /*========== TYPEDEFS ==========*/
 
 typedef enum{
@@ -104,10 +106,19 @@ typedef struct {
     uint32_t auto_off_timeout;
 }st7735_t;
 
+typedef struct {
+    uint8_t buff[ST7735_SPI_MAX_BUFF];
+    uint8_t len;
+    uint8_t ptr;
+    uint8_t sending;
+    uint8_t buff_bisy;
+}spi_buf_t;
+
 /*========= GLOBAL VARIABLES ==========*/
 
 extern st7735_t st7735;
 extern uint16_t st7735_disp[];
+extern SPI_HandleTypeDef st7735_spi;
 
 /*========== FUNCTION PROTOTYPES ==========*/
 
@@ -125,6 +136,7 @@ int st7735_fill_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t color)
 int st7735_xy(uint8_t x, uint8_t y);
 int st7735_print_char(char ch, FontDef_t* font, uint16_t color);
 int st7735_print(char* string, FontDef_t* font, uint16_t color);
+int st7735_send(uint32_t timeout_us);
 int st7735_update(void);
 
 #endif // ST7735_H
