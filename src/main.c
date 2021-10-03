@@ -57,7 +57,6 @@
 #include "pin_map.h"
 #include "buttons.h"
 #include "LCD.h"
-#include "st7735.h"
 #include "adc.h"
 #include "portable.h"
 #include "am2302.h"
@@ -80,8 +79,12 @@
 
 #define LCD_DISP 1
 #define ST7735_DISP 2
-#define DISP ST7735_DISP // LCD_DISP or ST7735_DISP
+#define DISP LCD_DISP // LCD_DISP or ST7735_DISP
 #define DISP_MAX_LINES  8
+
+#if (DISP == ST7735_DISP)
+    #include "st7735.h"
+#endif
 
 /* Private variables ---------------------------------------------------------*/
 RTC_HandleTypeDef hrtc;
@@ -263,7 +266,7 @@ int main(void){
 void dcts_init (void) {
 
     dcts.dcts_id = DCTS_ID_COMBINED;
-    strcpy (dcts.dcts_ver, "0.1.0");
+    strcpy (dcts.dcts_ver, "0.2.0");
     strcpy (dcts.dcts_name, "Pogreb");
     strcpy (dcts.dcts_name_cyr, "Погреб");
     dcts.dcts_address = 0x0B;
@@ -274,13 +277,6 @@ void dcts_init (void) {
     dcts.dcts_rtc.hour = 12;
     dcts.dcts_rtc.minute = 0;
     dcts.dcts_rtc.second = 0;
-    /*uint16_t read = read_bkp(0);
-    if(read == RTC_KEY){
-        dcts.dcts_rtc.state = RTC_STATE_READY;
-    }else{
-        save_to_bkp(0, RTC_KEY);
-        dcts.dcts_rtc.state = RTC_STATE_SET;
-    }*/
     dcts.dcts_pwr = 0.0f;
     dcts.dcts_meas_num = MEAS_NUM;
     dcts.dcts_rele_num = RELE_NUM;
@@ -1579,9 +1575,9 @@ static void value_print(u8 tick){
         next_page = next_page->Next;
         line_pointer++;
     }
-#endif // DISP
 
     st7735_fill_rect(0,0,160,9,ST7735_WHITE);
+#endif // DISP
     print_back();
 
     if(navigation_style == MENU_NAVIGATION){
@@ -1712,6 +1708,12 @@ static int get_param_value(char* string, menu_page_t page){
         break;
     case MDB_BITRATE:
         sprintf(string, "%d", bitrate_array[bitrate_array_pointer]*100);
+        break;
+    case MDB_RECIEVED:
+        sprintf(string, "%d", uart_1.recieved_cnt);
+        break;
+    case MDB_SENT:
+        sprintf(string, "%d", uart_1.send_cnt);
         break;
     case MDB_OVERRUN_ERR:
         sprintf(string, "%d", uart_1.overrun_err_cnt);
@@ -2802,6 +2804,7 @@ void uart_task(void const * argument){
             uart_1.state &= ~UART_STATE_ERROR;
             uart_1.state |= UART_STATE_IN_HANDING;
             uart_1.conn_last = 0;
+            uart_1.recieved_cnt ++;
 
             if(modbus_packet_for_me(uart_1.buff_received, uart_1.received_len)){
                 uint16_t new_len = modbus_rtu_packet(uart_1.buff_received, uart_1.received_len);

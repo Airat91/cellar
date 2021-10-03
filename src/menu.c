@@ -104,10 +104,12 @@ MAKE_MENU       (main_page,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
     MAKE_MENU   (rele_ch_5,     rele_ch_0,      rele_ch_4,      rele_channels,  rele_auto_5,    2,          RELE_CH_5,          "Резерв");
       MAKE_MENU (rele_auto_5,   rele_cntrl_5,   rele_cntrl_5,   rele_ch_5,      EDITED_VAL,     0,          RELE_AUTO_MAN_5,    "Управление");
       MAKE_MENU (rele_cntrl_5,  rele_auto_5,    rele_auto_5,    rele_ch_5,      EDITED_VAL,     0,          RELE_CONTROL_5,     "Состояние");
-  MAKE_MENU     (connection,    display,        rele_channels,  main_page,      mdb_addr,       6,          CONNECTION,         "Связь");
+  MAKE_MENU     (connection,    display,        rele_channels,  main_page,      mdb_addr,       8,          CONNECTION,         "Связь");
     MAKE_MENU   (mdb_addr,      bitrate,        noise_err,      connection,     EDITED_VAL,     0,          MDB_ADDR,           "Адрес ModBUS");
-    MAKE_MENU   (bitrate,       overrun_err,    mdb_addr,       connection,     EDITED_VAL,     0,          MDB_BITRATE,        "Битрейт");
-    MAKE_MENU   (overrun_err,   parity_err,     bitrate,        connection,     NULL_ENTRY,     0,          MDB_OVERRUN_ERR,    "Ошибки чтения");
+    MAKE_MENU   (bitrate,       recieved,       mdb_addr,       connection,     EDITED_VAL,     0,          MDB_BITRATE,        "Битрейт");
+    MAKE_MENU   (recieved,      sended,         bitrate,        connection,     NULL_ENTRY,     0,          MDB_RECIEVED,       "Получено");
+    MAKE_MENU   (sended,        overrun_err,    recieved,       connection,     NULL_ENTRY,     0,          MDB_SENT,           "Отправлено");
+    MAKE_MENU   (overrun_err,   parity_err,     sended,         connection,     NULL_ENTRY,     0,          MDB_OVERRUN_ERR,    "Ошибки чтения");
     MAKE_MENU   (parity_err,    frame_err,      overrun_err,    connection,     NULL_ENTRY,     0,          MDB_PARITY_ERR,     "Ошибки паритета");
     MAKE_MENU   (frame_err,     noise_err,      parity_err,     connection,     NULL_ENTRY,     0,          MDB_FRAME_ERR,      "Ошибки кадра");
     MAKE_MENU   (noise_err,     mdb_addr,       frame_err,      connection,     NULL_ENTRY,     0,          MDB_NOISE_ERR,      "Ошибки помехи");
