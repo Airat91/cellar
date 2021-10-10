@@ -106,6 +106,9 @@ void dcts_init (void);
 static void channels_init(void);
 static void MX_IWDG_Init(void);
 static void RTC_Init(void);
+static int RTC_write_cnt(u32 cnt_value);
+static HAL_StatusTypeDef RTC_EnterInitMode(RTC_HandleTypeDef* hrtc);
+static HAL_StatusTypeDef RTC_ExitInitMode(RTC_HandleTypeDef* hrtc);
 //static void MX_ADC1_Init(void);
 //static void MX_USART1_UART_Init(void);
 static void print_header(void);
@@ -136,6 +139,7 @@ static int channel_PWM_duty_set(u8 channel, float duty);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
+//static struct tm system_time = {0};
 uint32_t us_cnt_H = 0;
 navigation_t navigation_style = MENU_NAVIGATION;
 edit_val_t edit_val = {0};
@@ -384,6 +388,7 @@ void SystemClock_Config(void)
 static void RTC_Init(void){
     RTC_TimeTypeDef Time = {0};
     RTC_DateTypeDef Date = {0};
+    u32 unix_time = 0;
     __HAL_RCC_BKP_CLK_ENABLE();
     __HAL_RCC_PWR_CLK_ENABLE();
     __HAL_RCC_RTC_ENABLE();
@@ -414,6 +419,86 @@ static void RTC_Init(void){
     }
     dcts.dcts_rtc.state = RTC_STATE_READY;
 }
+
+/*static int RTC_write_cnt(u32 cnt_value){
+    int result = 0;
+    //write value to RTC
+    uint32_t tickstart = 0U;
+    // Process Locked
+    __HAL_LOCK(&hrtc);
+    hrtc.State = HAL_RTC_STATE_BUSY;
+    tickstart = HAL_GetTick();
+    while((hrtc.Instance->CRL & RTC_CRL_RTOFF) == (uint32_t)RESET){
+        if((HAL_GetTick() - tickstart) >  RTC_TIMEOUT_VALUE){
+            result = -1;
+            break;
+        }
+    }
+
+    // Disable the write protection for RTC registers
+    __HAL_RTC_WRITEPROTECTION_DISABLE(&hrtc);
+
+    // Set Initialization mode
+    if(RTC_EnterInitMode(&hrtc) != HAL_OK){
+        result = -2;
+    }else{
+        // Set RTC COUNTER MSB word
+        WRITE_REG(hrtc.Instance->CNTH, (cnt_value >> 16U));
+        // Set RTC COUNTER LSB word
+        WRITE_REG(hrtc.Instance->CNTL, (cnt_value & RTC_CNTL_RTC_CNT));
+
+        // Wait for synchro
+        if(RTC_ExitInitMode(&hrtc) != HAL_OK){
+            result = -3;
+        }
+    }
+    // Clear Second and overflow flags
+    CLEAR_BIT(hrtc.Instance->CRL, (RTC_FLAG_SEC | RTC_FLAG_OW));
+    hrtc.State = HAL_RTC_STATE_READY;
+   __HAL_UNLOCK(&hrtc);
+
+    return result;
+}*/
+
+/*static HAL_StatusTypeDef RTC_EnterInitMode(RTC_HandleTypeDef* hrtc)
+{
+  uint32_t tickstart = 0U;
+
+  tickstart = HAL_GetTick();
+  // Wait till RTC is in INIT state and if Time out is reached exit
+  while((hrtc->Instance->CRL & RTC_CRL_RTOFF) == (uint32_t)RESET)
+  {
+    if((HAL_GetTick() - tickstart) >  RTC_TIMEOUT_VALUE)
+    {
+      return HAL_TIMEOUT;
+    }
+  }
+
+  // Disable the write protection for RTC registers
+  __HAL_RTC_WRITEPROTECTION_DISABLE(hrtc);
+
+
+  return HAL_OK;
+}*/
+/*static HAL_StatusTypeDef RTC_ExitInitMode(RTC_HandleTypeDef* hrtc)
+{
+  uint32_t tickstart = 0U;
+
+  // Disable the write protection for RTC registers
+  __HAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
+
+  tickstart = HAL_GetTick();
+  // Wait till RTC is in INIT state and if Time out is reached exit
+  while((hrtc->Instance->CRL & RTC_CRL_RTOFF) == (uint32_t)RESET)
+  {
+    if((HAL_GetTick() - tickstart) >  RTC_TIMEOUT_VALUE)
+    {
+      return HAL_TIMEOUT;
+    }
+  }
+
+  return HAL_OK;
+}*/
 /**
  * @brief RTC task
  * @param argument - None
@@ -628,6 +713,7 @@ void display_task(void const * argument){
 #define BUTTON_PRESS_TIME 1000
 #define BUTTON_PRESS_TIMEOUT 10000
 #define BUTTON_CLICK_TIME 10
+#define BUTTON_DISP_RESET 3000
 #define navigation_task_period 20
 void navigation_task (void const * argument){
     (void)argument;
@@ -825,15 +911,15 @@ void navigation_task (void const * argument){
         if(button_click(BUTTON_SET,BUTTON_CLICK_TIME)){
             save_params();
         }
-
-        /*if((pressed_time[BUTTON_BREAK].pressed > 0)&&(pressed_time[BUTTON_BREAK].pressed < navigation_task_period)){
-            if(LCD.auto_off == 0){
-                LCD_backlight_toggle();
-            }
+        if(button_clamp(BUTTON_BREAK, BUTTON_DISP_RESET)){
+            vTaskSuspend(displayTaskHandle);
+            LCD_deinit();
+            LCD_init();
+            vTaskResume(displayTaskHandle);
         }
-        if((pressed_time[BUTTON_SET].pressed > 0)&&(pressed_time[BUTTON_SET].pressed < navigation_task_period)){
-            save_params();
-        }*/
+        if(button_clamp(BUTTON_LEFT, BUTTON_DISP_RESET)){
+            NVIC_SystemReset();
+        }
         osDelayUntil(&last_wake_time, navigation_task_period);
     }
 }
