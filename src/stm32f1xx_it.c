@@ -266,10 +266,12 @@ void USART1_IRQHandler(void)
   /* USER CODE END USART1_IRQn 1 */
 }
 
+#if(DISP == ST7735_DISP)
 void SPI1_IRQHandler(void){
     HAL_SPI_IRQHandler(&st7735_spi);
     st7735_spi_handler();
 }
+#endif
 
 /* USER CODE BEGIN 1 */
 

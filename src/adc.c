@@ -21,6 +21,7 @@ ADC_HandleTypeDef hadc1;
 #define ADC_MAX 4095
 #define ADC_VREF 3.3f
 #define INPUT_RES 10000.0f
+#define RES_MAX_VAL 9999.9f
 
 #define PWR_K   (float)10.1
 #define VREF_INT (float)1.2
@@ -178,10 +179,16 @@ void adc_task(void const * argument){
         dcts_meas[WTR_MIN_ADC].value = (float)wtr_min_sum/WTR_LVL_BUF_SIZE;
         dcts_meas[WTR_MIN_VLT].value = dcts_meas[WTR_MIN_ADC].value*v_3_3/ADC_MAX;
         dcts_meas[WTR_MIN_RES].value = dcts_meas[WTR_MIN_VLT].value*INPUT_RES/(v_3_3 -  dcts_meas[WTR_MIN_VLT].value);
+        if(dcts_meas[WTR_MIN_RES].value > RES_MAX_VAL){
+            dcts_meas[WTR_MIN_RES].value = RES_MAX_VAL;
+        }
 
         dcts_meas[WTR_MAX_ADC].value = (float)wtr_max_sum/WTR_LVL_BUF_SIZE;
         dcts_meas[WTR_MAX_VLT].value = dcts_meas[WTR_MAX_ADC].value*v_3_3/ADC_MAX;
         dcts_meas[WTR_MAX_RES].value = dcts_meas[WTR_MAX_VLT].value*INPUT_RES/(v_3_3 -  dcts_meas[WTR_MAX_VLT].value);
+        if(dcts_meas[WTR_MAX_RES].value > RES_MAX_VAL){
+            dcts_meas[WTR_MAX_RES].value = RES_MAX_VAL;
+        }
 
         dcts_meas[VREF_VLT].value = v_3_3;
 

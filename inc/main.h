@@ -83,16 +83,20 @@
 #define STEP_PORT GPIOB
 
 #define MEAS_NUM 16
-#define ACT_NUM 6
+#define ACT_NUM 8
 #define RELE_NUM 6
 #define ARRAY_NUM 2
-#define SAVED_PARAMS_SIZE 44
+#define SAVED_PARAMS_SIZE 50
 #if(STM32F103xB == 1)
 #define BKP_REG_NUM 10
 #elif(STM32F103x8 == 1)
 #define BKP_REG_NUM 5
 #endif
 
+#define LCD_DISP 1
+#define ST7735_DISP 2
+#define DISP LCD_DISP // LCD_DISP or ST7735_DISP
+#define DISP_MAX_LINES  8
 
 #if(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE/2)
     #error(SAVED_PARAMS_SIZE > SAVE_AREA_SIZE)
@@ -234,8 +238,6 @@ typedef union{
         uint16_t act_enable[ACT_NUM];
         float    act_set[ACT_NUM];
         float    act_hyst[ACT_NUM];
-        float    wtr_min_ref;
-        float    wtr_max_ref;
         uint16_t rele[RELE_NUM];
     }params;
     uint16_t word[SAVED_PARAMS_SIZE];
@@ -313,7 +315,7 @@ extern osThreadId uartTaskHandle;
 extern saved_to_flash_t config;
 extern const ch_t do_ch[];
 extern const ch_t ch[];
-extern in_channel_t input_ch[];
+extern const in_channel_t input_ch[];
 extern bkp_data_t *bkp_data_p;
 extern IWDG_HandleTypeDef hiwdg;
 
