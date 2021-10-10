@@ -65,6 +65,7 @@
 #include "uart.h"
 #include "modbus.h"
 #include "ds18.h"
+#include "time.h"
 
 /**
   * @defgroup MAIN
@@ -76,11 +77,6 @@
 #define DO_NUM 6
 #define IN_CHANNEL_NUM 8
 #define RTC_KEY 0xABCD
-
-#define LCD_DISP 1
-#define ST7735_DISP 2
-#define DISP LCD_DISP // LCD_DISP or ST7735_DISP
-#define DISP_MAX_LINES  8
 
 #if (DISP == ST7735_DISP)
     #include "st7735.h"
@@ -179,7 +175,7 @@ static const char ch_mode_descr[6][10] = {
     "ШИМ-выход",
 };
 
-in_channel_t input_ch[8] = {
+const in_channel_t input_ch[8] = {
     {.mode = CH_MODE_ADC,   .port = CH_0_PORT, .pin = CH_0_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_0, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_1},
     {.mode = CH_MODE_ADC,   .port = CH_1_PORT, .pin = CH_1_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_1, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_2},
     {.mode = CH_MODE_AM3202,.port = CH_2_PORT, .pin = CH_2_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_2, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_3},
@@ -266,7 +262,7 @@ int main(void){
 void dcts_init (void) {
 
     dcts.dcts_id = DCTS_ID_COMBINED;
-    strcpy (dcts.dcts_ver, "0.2.0");
+    strcpy (dcts.dcts_ver, "0.2.1");
     strcpy (dcts.dcts_name, "Pogreb");
     strcpy (dcts.dcts_name_cyr, "Погреб");
     dcts.dcts_address = 0x0B;
@@ -309,8 +305,9 @@ void dcts_init (void) {
     dcts_act_channel_init(TMPR_IN_HEATING, "Tmpr IN heating", "Температура нагрев", "°C", "°C");
     dcts_act_channel_init(TMPR_IN_COOLING, "Tmpr IN cooling", "Температура охлаждение", "°C", "°C");
     dcts_act_channel_init(HUM_IN, "Hum IN", "Влажность", "%", "%");
+    dcts_act_channel_init(AUTO_PUMP, "Auto Pump", "Автодренаж", "", "");
     dcts_act_channel_init(WTR_MIN_LVL, "Min level detect", "Минимальный уровень", "Ohm", "Ом");
-    dcts_act_channel_init(WTR_MIN_LVL, "Max level detect", "Максимальный уровень", "Ohm", "Ом");
+    dcts_act_channel_init(WTR_MAX_LVL, "Max level detect", "Максимальный уровень", "Ohm", "Ом");
 
     //rele_channels
 
@@ -1236,10 +1233,10 @@ static void main_page_print(u8 tick){
     //water level
 #if(DISP == LCD_DISP)
     LCD_set_xy(111,0);
-    if(dcts_meas[WTR_MIN_RES].value > config.params.wtr_min_ref){
+    if(dcts_act[WTR_MIN_LVL].meas_value > dcts_act[WTR_MIN_LVL].hysteresis){
         //empty
         LCD_print_char(22,&Icon_16x16,LCD_COLOR_BLACK);
-    }else if((dcts_meas[WTR_MIN_RES].value < config.params.wtr_min_ref)&&(dcts_meas[WTR_MAX_RES].value > config.params.wtr_max_ref)){
+    }else if((dcts_act[WTR_MIN_LVL].meas_value < dcts_act[WTR_MIN_LVL].hysteresis)&&(dcts_act[WTR_MAX_LVL].meas_value > dcts_act[WTR_MAX_LVL].hysteresis)){
         //min level
         switch(tick%2){
         case 0:
@@ -1249,7 +1246,7 @@ static void main_page_print(u8 tick){
             LCD_print_char(24,&Icon_16x16,LCD_COLOR_BLACK);
             break;
         }
-    }else if((dcts_meas[WTR_MIN_RES].value < config.params.wtr_min_ref)&&(dcts_meas[WTR_MAX_RES].value < config.params.wtr_max_ref)){
+    }else if((dcts_act[WTR_MIN_LVL].meas_value < dcts_act[WTR_MIN_LVL].hysteresis)&&(dcts_act[WTR_MAX_LVL].meas_value < dcts_act[WTR_MAX_LVL].hysteresis)){
         //max level
         switch(tick%2){
         case 0:
@@ -1676,10 +1673,10 @@ static int get_param_value(char* string, menu_page_t page){
         break;
 
     case WTR_MIN_REF:
-        sprintf(string, "%.1f", (double)config.params.wtr_min_ref);
+        sprintf(string, "%.1f", (double)dcts_act[WTR_MIN_LVL].hysteresis);// config.params.wtr_min_ref);
         break;
     case WTR_MAX_REF:
-        sprintf(string, "%.1f", (double)config.params.wtr_max_ref);
+        sprintf(string, "%.1f", (double)dcts_act[WTR_MAX_LVL].hysteresis);// config.params.wtr_max_ref);
         break;
 
     case RELE_AUTO_MAN_0:
@@ -1966,7 +1963,7 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit = 0;
         edit_val.val_min.vfloat = 0.0;
         edit_val.val_max.vfloat = 9999.0;
-        edit_val.p_val.p_float = &config.params.wtr_min_ref;
+        edit_val.p_val.p_float = &dcts_act[WTR_MIN_LVL].hysteresis;
         edit_val.select_shift = 2;
         edit_val.select_width = Font_7x10.FontWidth;
         break;
@@ -1977,7 +1974,7 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit = 0;
         edit_val.val_min.vfloat = 0.0;
         edit_val.val_max.vfloat = 9999.0;
-        edit_val.p_val.p_float = &config.params.wtr_max_ref;
+        edit_val.p_val.p_float = &dcts_act[WTR_MAX_LVL].hysteresis;
         edit_val.select_shift = 2;
         edit_val.select_width = Font_7x10.FontWidth;
         break;
@@ -2958,24 +2955,52 @@ void control_task(void const * argument){
             }
         }
 
+        // water min
+        //if(dcts_act[WTR_MIN_LVL].state.control){
+            if(dcts_meas[WTR_MIN_RES].valid){
+                dcts_act[WTR_MIN_LVL].meas_value = dcts_meas[WTR_MIN_RES].value;
+                if(dcts_act[WTR_MIN_LVL].meas_value < dcts_act[WTR_MIN_LVL].hysteresis){
+                    dcts_act[WTR_MIN_LVL].state.pin_state = 1;
+                }else{
+                    dcts_act[WTR_MIN_LVL].state.pin_state = 0;
+                }
+            }
+        /*}else{
+            dcts_act[WTR_MIN_LVL].state.pin_state = 0;
+        }*/
+
+        // water max
+        //if(dcts_act[WTR_MAX_LVL].state.control){
+            if(dcts_meas[WTR_MAX_RES].valid){
+                dcts_act[WTR_MAX_LVL].meas_value = dcts_meas[WTR_MAX_RES].value;
+                if(dcts_act[WTR_MAX_LVL].meas_value < dcts_act[WTR_MAX_LVL].hysteresis){
+                    dcts_act[WTR_MAX_LVL].state.pin_state = 1;
+                }else{
+                    dcts_act[WTR_MAX_LVL].state.pin_state = 0;
+                }
+            }
+        /*}else{
+            dcts_act[WTR_MAX_LVL].state.pin_state = 0;
+        }*/
+
         // water pump
         if(dcts_act[AUTO_PUMP].state.control){
             switch(pump_state){
             case PUMP_EMPTY:
-                if(dcts_meas[WTR_MIN_RES].value < config.params.wtr_min_ref){
+                if(dcts_act[WTR_MIN_LVL].state.pin_state == 1){
                     pump_state = PUMP_FILLING;
                 }
                 break;
             case PUMP_FILLING:
-                if(dcts_meas[WTR_MIN_RES].value > config.params.wtr_min_ref){
+                if(dcts_act[WTR_MIN_LVL].state.pin_state == 0){
                     pump_state = PUMP_EMPTY;
-                }else if(dcts_meas[WTR_MAX_RES].value < config.params.wtr_max_ref){
+                }else if(dcts_act[WTR_MAX_LVL].state.pin_state == 1){
                     pump_state = PUMP_ACTIVE;
                 }
                 break;
             case PUMP_ACTIVE:
                 dcts_act[WTR_PUMP].state.pin_state = 1;
-                if(dcts_meas[WTR_MIN_RES].value > config.params.wtr_min_ref){
+                if(dcts_act[WTR_MAX_LVL].state.pin_state == 0){
                     dcts_act[WTR_PUMP].state.pin_state = 0;
                     pump_state = PUMP_EMPTY;
                 }
