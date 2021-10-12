@@ -2,6 +2,7 @@
 #include "main.h"
 #include "pin_map.h"
 #include "dcts.h"
+#include "modbus.h"
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include "string.h"
@@ -27,6 +28,61 @@ uart_stream_t uart_1 = {0};
 
 /*========== FUNCTIONS ==========*/
 
+#define uart_task_period 5
+void uart_task(void const * argument){
+    (void)argument;
+    uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
+    uint16_t tick = 0;
+    char string[100];
+    uint32_t last_wake_time = osKernelSysTick();
+    while(1){
+        if((uart_1.state & UART_STATE_RECIEVE)&&\
+                ((uint16_t)(us_tim_get_value() - uart_1.timeout_last) > uart_1.timeout)){
+            memcpy(uart_1.buff_received, uart_1.buff_in, uart_1.in_ptr);
+            uart_1.received_len = uart_1.in_ptr;
+            uart_1.in_ptr = 0;
+            uart_1.state &= ~UART_STATE_RECIEVE;
+            uart_1.state &= ~UART_STATE_ERROR;
+            uart_1.state |= UART_STATE_IN_HANDING;
+            uart_1.conn_last = 0;
+            uart_1.recieved_cnt ++;
+
+            if(modbus_packet_for_me(uart_1.buff_received, uart_1.received_len)){
+                uint16_t new_len = modbus_rtu_packet(uart_1.buff_received, uart_1.received_len);
+                uart_send(uart_1.buff_received, new_len);
+                uart_1.state &= ~UART_STATE_IN_HANDING;
+            }
+            if(uart_1.state & UART_STATE_IN_HANDING){
+                dcts_packet_handle(uart_1.buff_received, uart_1.received_len);
+            }else{
+                uart_1.state &= ~UART_STATE_IN_HANDING;
+            }
+        }
+        if((uart_1.conn_last > uart_1.conn_lost_timeout)||(uart_1.overrun_err_cnt > 2)){
+            uart_deinit();
+            uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
+        }
+        if(tick == 1000/uart_task_period){
+            tick = 0;
+            //HAL_GPIO_TogglePin(LED_PORT,LED_PIN);
+            /*for(uint8_t i = 0; i < MEAS_NUM; i++){
+                sprintf(string, "%s:\t%.1f(%s)\n",dcts_meas[i].name,(double)dcts_meas[i].value,dcts_meas[i].unit);
+                if(i == MEAS_NUM - 1){
+                    strncat(string,"\n",1);
+                }
+                uart_send((uint8_t*)string,(uint16_t)strlen(string));
+            }
+            sprintf(string, "test\n");
+            uart_send((uint8_t*)string,(uint16_t)strlen(string));*/
+
+        }else{
+            tick++;
+            uart_1.conn_last += uart_task_period;
+        }
+
+        osDelayUntil(&last_wake_time, uart_task_period);
+    }
+}
 /**
  * @brief Init UART
  * @param bit_rate

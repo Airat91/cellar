@@ -73,7 +73,7 @@
 
 #define FEEDER 0
 #define DEFAULT_TASK_PERIOD 100
-#define RELEASE 0
+#define RELEASE 1
 #define DO_NUM 6
 #define IN_CHANNEL_NUM 8
 #define RTC_KEY 0xABCD
@@ -101,16 +101,11 @@ osThreadId uartTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-//static void MX_GPIO_Init(void);
 void dcts_init (void);
 static void channels_init(void);
 static void MX_IWDG_Init(void);
 static void RTC_Init(void);
-static int RTC_write_cnt(u32 cnt_value);
-static HAL_StatusTypeDef RTC_EnterInitMode(RTC_HandleTypeDef* hrtc);
-static HAL_StatusTypeDef RTC_ExitInitMode(RTC_HandleTypeDef* hrtc);
-//static void MX_ADC1_Init(void);
-//static void MX_USART1_UART_Init(void);
+static int RTC_write_cnt(time_t cnt_value);
 static void print_header(void);
 static void main_page_print(u8 tick);
 static void menu_page_print(u8 tick);
@@ -118,10 +113,6 @@ static void value_print(u8 tick);
 static void error_page_print(menu_page_t page);
 static void save_page_print (u8 tick);
 static void info_print (void);
-/*static void meas_channels_print(void);
-static void calib_print(uint8_t start_channel);
-static void mdb_print(void);
-static void display_print(void);*/
 static int get_param_value(char* string, menu_page_t page);
 static void set_edit_value(menu_page_t page);
 static void print_back(void);
@@ -139,7 +130,6 @@ static int channel_PWM_duty_set(u8 channel, float duty);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
-//static struct tm system_time = {0};
 uint32_t us_cnt_H = 0;
 navigation_t navigation_style = MENU_NAVIGATION;
 edit_val_t edit_val = {0};
@@ -187,19 +177,8 @@ const in_channel_t input_ch[8] = {
     {.mode = CH_MODE_AM3202,.port = CH_4_PORT, .pin = CH_4_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_6, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_1},
     {.mode = CH_MODE_PWM,   .port = CH_5_PORT, .pin = CH_5_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_7, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_2},
     {.mode = CH_MODE_PWM,   .port = CH_6_PORT, .pin = CH_6_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_8, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_3},
-    {.mode = CH_MODE_NONE,  .port = CH_7_PORT,.pin = CH_7_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_9, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_4},
+    {.mode = CH_MODE_NONE,  .port = CH_7_PORT, .pin = CH_7_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_9, .pwm_tim = TIM3, .pwm_channel = TIM_CHANNEL_4},
 };
-
-/*const ch_t ch[8] = {
-    {.pin = CH_0_PIN, .port = CH_0_PORT},
-    {.pin = CH_1_PIN, .port = CH_1_PORT},
-    {.pin = CH_2_PIN, .port = CH_2_PORT},
-    {.pin = CH_3_PIN, .port = CH_3_PORT},
-    {.pin = CH_4_PIN, .port = CH_4_PORT},
-    {.pin = CH_5_PIN, .port = CH_5_PORT},
-    {.pin = CH_6_PIN, .port = CH_6_PORT},
-    {.pin = CH_7_PIN, .port = CH_7_PORT},
-};*/
 
 const ch_t do_ch[6] = {
     {.pin = DO_0_PIN, .port = DO_0_PORT},
@@ -220,11 +199,9 @@ int main(void){
 
     HAL_Init();
     SystemClock_Config();
-    //channels_init();
     tim2_init();
     dcts_init();
     restore_params();
-    //led_lin_init();
     refresh_watchdog();
 
     osThreadDef(rtc_task, rtc_task, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
@@ -266,7 +243,7 @@ int main(void){
 void dcts_init (void) {
 
     dcts.dcts_id = DCTS_ID_COMBINED;
-    strcpy (dcts.dcts_ver, "0.2.1");
+    strcpy (dcts.dcts_ver, "0.2.2");
     strcpy (dcts.dcts_name, "Pogreb");
     strcpy (dcts.dcts_name_cyr, "Погреб");
     dcts.dcts_address = 0x0B;
@@ -386,9 +363,8 @@ void SystemClock_Config(void)
 
 /* RTC init function */
 static void RTC_Init(void){
-    RTC_TimeTypeDef Time = {0};
-    RTC_DateTypeDef Date = {0};
-    u32 unix_time = 0;
+    time_t unix_time = 0;
+    struct tm system_time = {0};
     __HAL_RCC_BKP_CLK_ENABLE();
     __HAL_RCC_PWR_CLK_ENABLE();
     __HAL_RCC_RTC_ENABLE();
@@ -406,99 +382,55 @@ static void RTC_Init(void){
         dcts.dcts_rtc.state = RTC_STATE_SET;
     }
     if(dcts.dcts_rtc.state == RTC_STATE_SET){
-        Time.Hours = dcts.dcts_rtc.hour;
-        Time.Minutes = dcts.dcts_rtc.minute;
-        Time.Seconds = dcts.dcts_rtc.second;
 
-        Date.Date = dcts.dcts_rtc.day;
-        Date.Month = dcts.dcts_rtc.month;
-        Date.Year = (uint8_t)(dcts.dcts_rtc.year - 2000);
+        system_time.tm_hour = dcts.dcts_rtc.hour;
+        system_time.tm_min = dcts.dcts_rtc.minute;
+        system_time.tm_sec = dcts.dcts_rtc.second;
 
-        HAL_RTC_SetTime(&hrtc, &Time, RTC_FORMAT_BIN);
-        HAL_RTC_SetDate(&hrtc, &Date, RTC_FORMAT_BIN);
+        system_time.tm_mday = dcts.dcts_rtc.day;
+        system_time.tm_mon = dcts.dcts_rtc.month;
+        system_time.tm_year = dcts.dcts_rtc.year - 1900;
+
+        unix_time = mktime(&system_time);
+
+        RTC_write_cnt(unix_time);
     }
     dcts.dcts_rtc.state = RTC_STATE_READY;
 }
-
-/*static int RTC_write_cnt(u32 cnt_value){
+/**
+ * @brief RTC_write_cnt
+ * @param cnt_value - time in unix format
+ * @return  0 - OK,\n
+ *          -1 - timeout error,\n
+ *          -2 - timeout error
+ */
+static int RTC_write_cnt(time_t cnt_value){
     int result = 0;
-    //write value to RTC
-    uint32_t tickstart = 0U;
-    // Process Locked
-    __HAL_LOCK(&hrtc);
-    hrtc.State = HAL_RTC_STATE_BUSY;
-    tickstart = HAL_GetTick();
-    while((hrtc.Instance->CRL & RTC_CRL_RTOFF) == (uint32_t)RESET){
-        if((HAL_GetTick() - tickstart) >  RTC_TIMEOUT_VALUE){
-            result = -1;
-            break;
-        }
+    u32 start = HAL_GetTick();
+    u32 timeout = 0;
+    PWR->CR |= PWR_CR_DBP;                                          //разрешить доступ к Backup области
+    while ((!(RTC->CRL & RTC_CRL_RTOFF))&&(timeout <= start + 500)){//проверить закончены ли изменения регистров RTC
+        osDelay(1);
+        timeout++;
     }
-
-    // Disable the write protection for RTC registers
-    __HAL_RTC_WRITEPROTECTION_DISABLE(&hrtc);
-
-    // Set Initialization mode
-    if(RTC_EnterInitMode(&hrtc) != HAL_OK){
+    if(timeout > start + 500){
+        result = -1;
+    }
+    RTC->CRL |= RTC_CRL_CNF;                                        //Разрешить Запись в регистры RTC
+    RTC->CNTH = (u32)cnt_value>>16;                                 //записать новое значение счетного регистра
+    RTC->CNTL = (u32)cnt_value;
+    RTC->CRL &= ~RTC_CRL_CNF;                                       //Запретить запись в регистры RTC
+    start = HAL_GetTick();
+    while ((!(RTC->CRL & RTC_CRL_RTOFF))&&(timeout <= start + 500)){//Дождаться окончания записи
+        osDelay(1);
+        timeout++;
+    }
+    if(timeout > start + 500){
         result = -2;
-    }else{
-        // Set RTC COUNTER MSB word
-        WRITE_REG(hrtc.Instance->CNTH, (cnt_value >> 16U));
-        // Set RTC COUNTER LSB word
-        WRITE_REG(hrtc.Instance->CNTL, (cnt_value & RTC_CNTL_RTC_CNT));
-
-        // Wait for synchro
-        if(RTC_ExitInitMode(&hrtc) != HAL_OK){
-            result = -3;
-        }
     }
-    // Clear Second and overflow flags
-    CLEAR_BIT(hrtc.Instance->CRL, (RTC_FLAG_SEC | RTC_FLAG_OW));
-    hrtc.State = HAL_RTC_STATE_READY;
-   __HAL_UNLOCK(&hrtc);
-
+    PWR->CR &= ~PWR_CR_DBP;                                         //запретить доступ к Backup области
     return result;
-}*/
-
-/*static HAL_StatusTypeDef RTC_EnterInitMode(RTC_HandleTypeDef* hrtc)
-{
-  uint32_t tickstart = 0U;
-
-  tickstart = HAL_GetTick();
-  // Wait till RTC is in INIT state and if Time out is reached exit
-  while((hrtc->Instance->CRL & RTC_CRL_RTOFF) == (uint32_t)RESET)
-  {
-    if((HAL_GetTick() - tickstart) >  RTC_TIMEOUT_VALUE)
-    {
-      return HAL_TIMEOUT;
-    }
-  }
-
-  // Disable the write protection for RTC registers
-  __HAL_RTC_WRITEPROTECTION_DISABLE(hrtc);
-
-
-  return HAL_OK;
-}*/
-/*static HAL_StatusTypeDef RTC_ExitInitMode(RTC_HandleTypeDef* hrtc)
-{
-  uint32_t tickstart = 0U;
-
-  // Disable the write protection for RTC registers
-  __HAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
-
-  tickstart = HAL_GetTick();
-  // Wait till RTC is in INIT state and if Time out is reached exit
-  while((hrtc->Instance->CRL & RTC_CRL_RTOFF) == (uint32_t)RESET)
-  {
-    if((HAL_GetTick() - tickstart) >  RTC_TIMEOUT_VALUE)
-    {
-      return HAL_TIMEOUT;
-    }
-  }
-
-  return HAL_OK;
-}*/
+}
 /**
  * @brief RTC task
  * @param argument - None
@@ -506,40 +438,42 @@ static void RTC_Init(void){
  */
 #define RTC_TASK_PERIOD 500
 void rtc_task(void const * argument){
-
+    time_t unix_time = 0;
+    struct tm system_time = {0};
     (void)argument;
-    RTC_TimeTypeDef time = {0};
-    RTC_DateTypeDef date = {0};
     RTC_Init();
     uint32_t last_wake_time = osKernelSysTick();
     while(1){
         switch (dcts.dcts_rtc.state) {
         case RTC_STATE_READY:   //update dcts_rtc from rtc
-            HAL_RTC_GetDate(&hrtc,&date,RTC_FORMAT_BIN);
-            HAL_RTC_GetTime(&hrtc,&time,RTC_FORMAT_BIN);
+            unix_time = (time_t)(RTC->CNTL);
+            unix_time |= (time_t)(RTC->CNTH<<16);
+            system_time = *localtime(&unix_time);
 
             taskENTER_CRITICAL();
-            dcts.dcts_rtc.hour = time.Hours;
-            dcts.dcts_rtc.minute = time.Minutes;
-            dcts.dcts_rtc.second = time.Seconds;
+            dcts.dcts_rtc.hour      = (u8)system_time.tm_hour;
+            dcts.dcts_rtc.minute    = (u8)system_time.tm_min;
+            dcts.dcts_rtc.second    = (u8)system_time.tm_sec;
 
-            dcts.dcts_rtc.day = date.Date;
-            dcts.dcts_rtc.month = date.Month;
-            dcts.dcts_rtc.year = date.Year + 2000;
-            dcts.dcts_rtc.weekday = date.WeekDay;
+            dcts.dcts_rtc.day       = (u8)system_time.tm_mday;
+            dcts.dcts_rtc.month     = (u8)system_time.tm_mon;
+            dcts.dcts_rtc.year      = (u8)system_time.tm_year + 1900;
+            dcts.dcts_rtc.weekday   = (u8)system_time.tm_wday;
             taskEXIT_CRITICAL();
             break;
         case RTC_STATE_SET:     //set new values from dcts_rtc
-            time.Hours = dcts.dcts_rtc.hour;
-            time.Minutes = dcts.dcts_rtc.minute;
-            time.Seconds = dcts.dcts_rtc.second;
 
-            date.Date = dcts.dcts_rtc.day;
-            date.Month = dcts.dcts_rtc.month;
-            date.Year = (uint8_t)(dcts.dcts_rtc.year - 2000);
+            system_time.tm_hour = dcts.dcts_rtc.hour;
+            system_time.tm_min  = dcts.dcts_rtc.minute;
+            system_time.tm_sec  = dcts.dcts_rtc.second;
 
-            HAL_RTC_SetTime(&hrtc, &time, RTC_FORMAT_BIN);
-            HAL_RTC_SetDate(&hrtc, &date, RTC_FORMAT_BIN);
+            system_time.tm_mday = dcts.dcts_rtc.day;
+            system_time.tm_mon  = dcts.dcts_rtc.month;
+            system_time.tm_year = dcts.dcts_rtc.year - 1900;
+
+            unix_time = mktime(&system_time);
+
+            RTC_write_cnt(unix_time);
 
             dcts.dcts_rtc.state = RTC_STATE_READY;
             break;
@@ -550,87 +484,6 @@ void rtc_task(void const * argument){
         osDelayUntil(&last_wake_time, RTC_TASK_PERIOD);
     }
 }
-
-
-/* RTC init function */
-/*static void MX_RTC_Init(void){
-    RTC_TimeTypeDef sTime = {0};
-    RTC_DateTypeDef sDate = {0};
-    __HAL_RCC_BKP_CLK_ENABLE();
-    __HAL_RCC_PWR_CLK_ENABLE();
-    __HAL_RCC_RTC_ENABLE();
-    hrtc.Instance = RTC;
-    hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
-    if (HAL_RTC_Init(&hrtc) != HAL_OK) {
-        _Error_Handler(__FILE__, __LINE__);
-    }
-
-    u32 data;
-    const  u32 data_c = 0x1234;
-    data = BKP->DR1;
-    if(data!=data_c){   // set default values
-        HAL_PWR_EnableBkUpAccess();
-        BKP->DR1 = data_c;
-        HAL_PWR_DisableBkUpAccess();
-
-        sTime.Hours = dcts.dcts_rtc.hour;
-        sTime.Minutes = dcts.dcts_rtc.minute;
-        sTime.Seconds = dcts.dcts_rtc.second;
-
-        sDate.Date = dcts.dcts_rtc.day;
-        sDate.Month = dcts.dcts_rtc.month;
-        sDate.Year = (uint8_t)(dcts.dcts_rtc.year - 2000);
-
-        HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD);
-        HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-    }else{  // read data from bkpram
-        HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-        HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-        dcts.dcts_rtc.hour = sTime.Hours;
-        dcts.dcts_rtc.minute = sTime.Minutes;
-        dcts.dcts_rtc.second = sTime.Seconds;
-
-        dcts.dcts_rtc.day = sDate.Date;
-        dcts.dcts_rtc.month = sDate.Month;
-        dcts.dcts_rtc.year = sDate.Year + 2000;
-        dcts.dcts_rtc.weekday = sDate.WeekDay;
-    }
-}*/
-
-
-/**
- * @brief default_task
- * @param argument - None
- * @todo add group
- */
-/*void default_task(void const * argument){
-
-    (void)argument;
-    RTC_TimeTypeDef time;
-    RTC_DateTypeDef date;
-    uint32_t last_wake_time = osKernelSysTick();
-
-    //HAL_IWDG_Refresh(&hiwdg);
-    while(1){
-        HAL_RTC_GetDate(&hrtc,&date,RTC_FORMAT_BIN);
-        HAL_RTC_GetTime(&hrtc,&time,RTC_FORMAT_BIN);
-
-        dcts.dcts_rtc.hour = time.Hours;
-        dcts.dcts_rtc.minute = time.Minutes;
-        dcts.dcts_rtc.second = time.Seconds;
-
-        dcts.dcts_rtc.day = date.Date;
-        dcts.dcts_rtc.month = date.Month;
-        dcts.dcts_rtc.year = date.Year + 2000;
-        dcts.dcts_rtc.weekday = date.WeekDay;
-
-        //HAL_IWDG_Refresh(&hiwdg);
-        osDelayUntil(&last_wake_time, DEFAULT_TASK_PERIOD);
-    }
-}*/
-
 /**
  * @brief display_task
  * @param argument
@@ -2374,347 +2227,6 @@ static void info_print (void){
     print_back();
 }
 
-/*static void calib_print (uint8_t start_channel){
-    char string[100];
-    menuItem* temp = selectedMenuItem->Parent;
-    uint16_t* calib_table;
-    sprintf(string, temp->Text);
-    LCD_set_xy(2,52);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,53,127,63);
-    if(temp->Page == LVL_CALIB){
-        //sprintf(string, "%.0f",dcts_meas[WTR_LVL_ADC].value);
-        LCD_set_xy(align_text_right(string,Font_7x10),52);
-        LCD_print(string,&Font_7x10,LCD_COLOR_WHITE);
-        calib_table = config.params.lvl_calib_table;
-    }else if(temp->Page == TMPR_CALIB){
-        //sprintf(string, "%.0f",dcts_meas[WTR_TMPR_ADC].value);
-        LCD_set_xy(align_text_right(string,Font_7x10),52);
-        LCD_print(string,&Font_7x10,LCD_COLOR_WHITE);
-        calib_table = config.params.tmpr_calib_table;
-    }
-
-    temp = selectedMenuItem->Previous;
-    sprintf(string, temp->Text);
-    LCD_set_xy(1,39);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "%d",calib_table[(uint8_t)temp->Page-start_channel]);
-    LCD_set_xy(align_text_right(string, Font_7x10)-1,39);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-
-    sprintf(string, selectedMenuItem->Text);
-    LCD_set_xy(1,26);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "%d",calib_table[(uint8_t)selectedMenuItem->Page-start_channel]);
-    LCD_set_xy(align_text_right(string, Font_7x10)-1,26);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,26,127,39);
-    LCD_invert_area(1,27,126,38);
-
-    temp = selectedMenuItem->Next;
-    sprintf(string, temp->Text);
-    LCD_set_xy(1,14);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    sprintf(string, "%d",calib_table[(uint8_t)temp->Page-start_channel]);
-    LCD_set_xy(align_text_right(string, Font_7x10)-1,14);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-
-    switch (navigation_style) {
-    case MENU_NAVIGATION:
-        sprintf(string, "<назад   изменить>");
-        LCD_set_xy(0,0);
-        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-        LCD_invert_area(0,0,42,11);
-        LCD_invert_area(62,0,127,11);
-
-        if(pressed_time[BUTTON_RIGHT].pressed > navigation_task_period){
-            while(pressed_time[BUTTON_RIGHT].last_state == BUTTON_PRESSED){
-            }
-            navigation_style = DIGIT_EDIT;
-            edit_val.digit_max = 3;
-            edit_val.digit = 0;
-            edit_val.val_min = 0;
-            edit_val.val_max = 0x4095;
-            edit_val.p_val = &calib_table[(uint8_t)selectedMenuItem->Page-start_channel];
-        }
-        break;
-    case DIGIT_EDIT:
-        sprintf(string, "*ввод");
-        LCD_set_xy(align_text_center(string, Font_7x10),0);
-        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-        LCD_invert_area(46,0,82,11);
-
-        LCD_invert_area(127-(edit_val.digit+1)*Font_7x10.FontWidth,27,126-edit_val.digit*Font_7x10.FontWidth,38);
-        break;
-    }
-
-}*/
-
-
-/*static void mdb_print(void){
-    static uint8_t reinit_uart = 0;
-    char string[100];
-    menuItem* temp = selectedMenuItem->Parent;
-    sprintf(string, temp->Text);
-    LCD_set_xy(align_text_center(string,Font_7x10),52);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,53,127,63);
-
-    temp = selectedMenuItem->Previous;
-    sprintf(string, temp->Text);
-    LCD_set_xy(1,39);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    switch (temp->Page) {
-    case MDB_OVERRUN_ERR:
-        sprintf(string, "%d",uart_2.overrun_err_cnt);
-        break;
-    case MDB_PARITY_ERR:
-        sprintf(string, "%d",uart_2.parity_err_cnt);
-        break;
-    case MDB_FRAME_ERR:
-        sprintf(string, "%d",uart_2.frame_err_cnt);
-        break;
-    case MDB_NOISE_ERR:
-        sprintf(string, "%d",uart_2.noise_err_cnt);
-        break;
-    case MDB_ADDR:
-        sprintf(string, "%d",config.params.mdb_address);
-        break;
-    case MDB_BITRATE:
-        sprintf(string, "%d",bitrate_array[bitrate_array_pointer]*100);
-        break;
-    }
-    LCD_set_xy(align_text_right(string, Font_7x10)-1,39);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-
-    sprintf(string, selectedMenuItem->Text);
-    LCD_set_xy(1,26);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    switch (selectedMenuItem->Page) {
-    case MDB_OVERRUN_ERR:
-        sprintf(string, "%d",uart_2.overrun_err_cnt);
-        break;
-    case MDB_PARITY_ERR:
-        sprintf(string, "%d",uart_2.parity_err_cnt);
-        break;
-    case MDB_FRAME_ERR:
-        sprintf(string, "%d",uart_2.frame_err_cnt);
-        break;
-    case MDB_NOISE_ERR:
-        sprintf(string, "%d",uart_2.noise_err_cnt);
-        break;
-    case MDB_ADDR:
-        sprintf(string, "%d",config.params.mdb_address);
-        break;
-    case MDB_BITRATE:
-        sprintf(string, "%d",bitrate_array[bitrate_array_pointer]*100);
-        break;
-    }
-    LCD_set_xy(align_text_right(string, Font_7x10)-1,26);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,26,127,39);
-    LCD_invert_area(1,27,126,38);
-
-    temp = selectedMenuItem->Next;
-    sprintf(string, temp->Text);
-    LCD_set_xy(1,14);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    switch (temp->Page) {
-    case MDB_OVERRUN_ERR:
-        sprintf(string, "%d",uart_2.overrun_err_cnt);
-        break;
-    case MDB_PARITY_ERR:
-        sprintf(string, "%d",uart_2.parity_err_cnt);
-        break;
-    case MDB_FRAME_ERR:
-        sprintf(string, "%d",uart_2.frame_err_cnt);
-        break;
-    case MDB_NOISE_ERR:
-        sprintf(string, "%d",uart_2.noise_err_cnt);
-        break;
-    case MDB_ADDR:
-        sprintf(string, "%d",config.params.mdb_address);
-        break;
-    case MDB_BITRATE:
-        sprintf(string, "%d",bitrate_array[bitrate_array_pointer]*100);
-        break;
-    }
-    LCD_set_xy(align_text_right(string, Font_7x10)-1,14);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-
-    switch (navigation_style) {
-    case MENU_NAVIGATION:
-        if(reinit_uart){
-            reinit_uart = 0;
-            config.params.mdb_bitrate = (uint16_t)bitrate_array[bitrate_array_pointer];
-            uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
-        }
-
-        sprintf(string, "<назад");
-        LCD_set_xy(0,0);
-        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-        LCD_invert_area(0,0,42,11);
-
-        switch (selectedMenuItem->Page) {
-        case MDB_ADDR:
-        case MDB_BITRATE:
-            sprintf(string, "изменить>");
-            LCD_set_xy(align_text_right(string,Font_7x10),0);
-            LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-            LCD_invert_area(62,0,127,11);
-
-            if(pressed_time[BUTTON_RIGHT].pressed > navigation_task_period){
-                while(pressed_time[BUTTON_RIGHT].last_state == BUTTON_PRESSED){
-                }
-                navigation_style = DIGIT_EDIT;
-                switch (selectedMenuItem->Page) {
-                case MDB_ADDR:
-                    edit_val.digit_max = 2;
-                    edit_val.digit = 0;
-                    edit_val.val_min = 0;
-                    edit_val.val_max = 255;
-                    edit_val.p_val = &config.params.mdb_address;
-                    break;
-                case MDB_BITRATE:
-                    edit_val.digit_max = 0;
-                    edit_val.digit = 0;
-                    edit_val.val_min = 0;
-                    edit_val.val_max = 13;
-                    edit_val.p_val = &bitrate_array_pointer;
-                    break;
-                }
-            }
-        }
-        break;
-    case DIGIT_EDIT:
-        reinit_uart = 1;
-
-        sprintf(string, "*ввод");
-        LCD_set_xy(align_text_center(string, Font_7x10),0);
-        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-        LCD_invert_area(46,0,82,11);
-
-        switch (selectedMenuItem->Page) {
-        case MDB_BITRATE:
-            sprintf(string,"%d",bitrate_array[bitrate_array_pointer]*100);
-            LCD_invert_area(126 - (uint8_t)strlen(string)*Font_7x10.FontWidth,27,126,38);
-            break;
-        default:
-            LCD_invert_area(127-(edit_val.digit+1)*Font_7x10.FontWidth,27,126-edit_val.digit*Font_7x10.FontWidth,38);
-        }
-        break;
-    }
-}*/
-/*static void display_print(void){
-    static uint8_t reinit_backlight = 0;
-    char string[100];
-    menuItem* temp = selectedMenuItem->Parent;
-    sprintf(string, temp->Text);
-    LCD_set_xy(align_text_center(string,Font_7x10),52);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,53,127,63);
-
-    sprintf(string, selectedMenuItem->Text);
-    LCD_set_xy(1,26);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    switch (selectedMenuItem->Page) {
-    case LIGHT_LVL:
-        sprintf(string, "%d%%",LCD.backlight_lvl*10);
-        break;
-    case AUTO_OFF:
-        if(LCD.auto_off == 0){
-            sprintf(string, "выкл");
-        }else{
-            sprintf(string, "%dсек",LCD.auto_off*10);
-        }
-        break;
-    }
-    LCD_set_xy(align_text_right(string, Font_7x10)-1,26);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    LCD_invert_area(0,26,127,39);
-    LCD_invert_area(1,27,126,38);
-
-    temp = selectedMenuItem->Next;
-    sprintf(string, temp->Text);
-    LCD_set_xy(1,14);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-    switch (temp->Page) {
-    case LIGHT_LVL:
-        sprintf(string, "%d%%",LCD.backlight_lvl*10);
-        break;
-    case AUTO_OFF:
-        if(LCD.auto_off == 0){
-            sprintf(string, "выкл");
-        }else{
-            sprintf(string, "%dсек",LCD.auto_off*10);
-        }
-        break;
-    }
-    LCD_set_xy(align_text_right(string, Font_7x10)-1,14);
-    LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-
-    switch (navigation_style) {
-    case MENU_NAVIGATION:
-        if(reinit_backlight == 1){
-            reinit_backlight = 0;
-            config.params.lcd_backlight_lvl = LCD.backlight_lvl;
-            config.params.lcd_backlight_time = LCD.auto_off;
-        }
-
-        sprintf(string, "<назад   изменить>");
-        LCD_set_xy(0,0);
-        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-        LCD_invert_area(0,0,42,11);
-        LCD_invert_area(62,0,127,11);
-
-        if(pressed_time[BUTTON_RIGHT].pressed > navigation_task_period){
-            while(pressed_time[BUTTON_RIGHT].last_state == BUTTON_PRESSED){
-            }
-            navigation_style = DIGIT_EDIT;
-            switch (selectedMenuItem->Page) {
-            case LIGHT_LVL:
-                edit_val.digit_max = 1;
-                edit_val.digit = 0;
-                edit_val.val_min = 0;
-                edit_val.val_max = 10;
-                edit_val.p_val = &LCD.backlight_lvl;
-                break;
-            case AUTO_OFF:
-                edit_val.digit_max = 1;
-                edit_val.digit = 0;
-                edit_val.val_min = 0;
-                edit_val.val_max = 60;
-                edit_val.p_val = &LCD.auto_off;
-                break;
-            default:
-                break;
-            }
-        }
-        break;
-    case DIGIT_EDIT:
-
-        reinit_backlight = 1;
-
-        sprintf(string, "*ввод");
-        LCD_set_xy(align_text_center(string, Font_7x10),0);
-        LCD_print(string,&Font_7x10,LCD_COLOR_BLACK);
-        LCD_invert_area(46,0,82,11);
-
-        switch (selectedMenuItem->Page) {
-        case LIGHT_LVL:
-            LCD_backlight_timer_init();
-            LCD_backlight_on();
-            LCD_invert_area(113-(edit_val.digit+1)*Font_7x10.FontWidth,27,112-edit_val.digit*Font_7x10.FontWidth,38);
-            break;
-        case AUTO_OFF:
-            LCD_invert_area(99-(edit_val.digit+1)*Font_7x10.FontWidth,27,98-edit_val.digit*Font_7x10.FontWidth,38);
-            break;
-        }
-        break;
-    }
-}*/
-
-
 static void save_page_print (u8 tick){
     char string[50];
 
@@ -2763,167 +2275,6 @@ static void save_page_print (u8 tick){
         break;
     }
 #endif // DISP
-}
-
-
-/**
- * @brief am2302_task
- * @param argument
- */
-
-#define am2302_task_period 3000
-void am2302_task (void const * argument){
-    (void)argument;
-    uint32_t last_wake_time = osKernelSysTick();
-    am2302_init();
-    am2302_data_t ch_2 = {0};
-    uint8_t ch_2_lost_con_cnt = 0;
-    uint32_t ch_2_recieved = 0;
-    uint32_t ch_2_lost = 0;
-    am2302_data_t ch_3 = {0};
-    uint8_t ch_3_lost_con_cnt = 0;
-    uint32_t ch_3_recieved = 0;
-    uint32_t ch_3_lost = 0;
-    am2302_data_t ch_4 = {0};
-    uint8_t ch_4_lost_con_cnt = 0;
-    uint32_t ch_4_recieved = 0;
-    uint32_t ch_4_lost = 0;
-    while(1){
-        ch_2 = am2302_get(0);
-        taskENTER_CRITICAL();
-        if(ch_2.error == 1){
-            ch_2_lost++;
-            ch_2_lost_con_cnt++;
-            if(ch_2_lost_con_cnt > 2){
-                dcts_meas[HUM_OUT].valid = FALSE;
-                dcts_meas[TMPR_OUT].valid = FALSE;
-            }
-        }else{
-            ch_2_recieved++;
-            ch_2_lost_con_cnt = 0;
-            dcts_meas[HUM_OUT].value = (float)ch_2.hum/10;
-            dcts_meas[HUM_OUT].valid = TRUE;
-            dcts_meas[TMPR_OUT].value = (float)ch_2.tmpr/10;
-            dcts_meas[TMPR_OUT].valid = TRUE;
-        }
-        taskEXIT_CRITICAL();
-
-        ch_3 = am2302_get(1);
-        taskENTER_CRITICAL();
-        if(ch_3.error == 1){
-            ch_3_lost++;
-            ch_3_lost_con_cnt++;
-            if(ch_3_lost_con_cnt > 2){
-                dcts_meas[HUM_IN_1].valid = FALSE;
-                dcts_meas[TMPR_IN_1].valid = FALSE;
-            }
-        }else{
-            ch_3_recieved++;
-            ch_3_lost_con_cnt = 0;
-            dcts_meas[HUM_IN_1].value = (float)ch_3.hum/10;
-            dcts_meas[HUM_IN_1].valid = TRUE;
-            dcts_meas[TMPR_IN_1].value = (float)ch_3.tmpr/10;
-            dcts_meas[TMPR_IN_1].valid = TRUE;
-        }
-        taskEXIT_CRITICAL();
-
-        ch_4 = am2302_get(2);
-        taskENTER_CRITICAL();
-        if(ch_4.error == 1){
-            ch_4_lost++;
-            ch_4_lost_con_cnt++;
-            if(ch_4_lost_con_cnt > 2){
-                dcts_meas[HUM_IN_2].valid = FALSE;
-                dcts_meas[TMPR_IN_2].valid = FALSE;
-            }
-        }else{
-            ch_4_recieved++;
-            ch_4_lost_con_cnt = 0;
-            dcts_meas[HUM_IN_2].value = (float)ch_4.hum/10;
-            dcts_meas[HUM_IN_2].valid = TRUE;
-            dcts_meas[TMPR_IN_2].value = (float)ch_4.tmpr/10;
-            dcts_meas[TMPR_IN_2].valid = TRUE;
-        }
-        taskEXIT_CRITICAL();
-
-        if((dcts_meas[HUM_IN_1].valid)&&(dcts_meas[HUM_IN_2].valid)){
-            dcts_meas[HUM_IN_AVG].value = (dcts_meas[HUM_IN_1].value + dcts_meas[HUM_IN_2].value)/2.0f;
-            dcts_meas[TMPR_IN_AVG].value = (dcts_meas[TMPR_IN_1].value + dcts_meas[TMPR_IN_2].value)/2.0f;
-            dcts_meas[HUM_IN_AVG].valid = TRUE;
-            dcts_meas[TMPR_IN_AVG].valid = TRUE;
-        }else if(dcts_meas[HUM_IN_1].valid){
-            dcts_meas[HUM_IN_AVG].value = dcts_meas[HUM_IN_1].value;
-            dcts_meas[TMPR_IN_AVG].value = dcts_meas[TMPR_IN_1].value;
-            dcts_meas[HUM_IN_AVG].valid = TRUE;
-            dcts_meas[TMPR_IN_AVG].valid = TRUE;
-        }else if(dcts_meas[HUM_IN_2].valid){
-            dcts_meas[HUM_IN_AVG].value = dcts_meas[HUM_IN_2].value;
-            dcts_meas[TMPR_IN_AVG].value = dcts_meas[TMPR_IN_2].value;
-            dcts_meas[HUM_IN_AVG].valid = TRUE;
-            dcts_meas[TMPR_IN_AVG].valid = TRUE;
-        }else{
-            dcts_meas[HUM_IN_AVG].valid = FALSE;
-            dcts_meas[TMPR_IN_AVG].valid = FALSE;
-        }
-
-        osDelayUntil(&last_wake_time, am2302_task_period);
-    }
-}
-
-#define uart_task_period 5
-void uart_task(void const * argument){
-    (void)argument;
-    uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
-    uint16_t tick = 0;
-    char string[100];
-    uint32_t last_wake_time = osKernelSysTick();
-    while(1){
-        if((uart_1.state & UART_STATE_RECIEVE)&&\
-                ((uint16_t)(us_tim_get_value() - uart_1.timeout_last) > uart_1.timeout)){
-            memcpy(uart_1.buff_received, uart_1.buff_in, uart_1.in_ptr);
-            uart_1.received_len = uart_1.in_ptr;
-            uart_1.in_ptr = 0;
-            uart_1.state &= ~UART_STATE_RECIEVE;
-            uart_1.state &= ~UART_STATE_ERROR;
-            uart_1.state |= UART_STATE_IN_HANDING;
-            uart_1.conn_last = 0;
-            uart_1.recieved_cnt ++;
-
-            if(modbus_packet_for_me(uart_1.buff_received, uart_1.received_len)){
-                uint16_t new_len = modbus_rtu_packet(uart_1.buff_received, uart_1.received_len);
-                uart_send(uart_1.buff_received, new_len);
-                uart_1.state &= ~UART_STATE_IN_HANDING;
-            }
-            if(uart_1.state & UART_STATE_IN_HANDING){
-                dcts_packet_handle(uart_1.buff_received, uart_1.received_len);
-            }else{
-                uart_1.state &= ~UART_STATE_IN_HANDING;
-            }
-        }
-        if((uart_1.conn_last > uart_1.conn_lost_timeout)||(uart_1.overrun_err_cnt > 2)){
-            uart_deinit();
-            uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
-        }
-        if(tick == 1000/uart_task_period){
-            tick = 0;
-            //HAL_GPIO_TogglePin(LED_PORT,LED_PIN);
-            /*for(uint8_t i = 0; i < MEAS_NUM; i++){
-                sprintf(string, "%s:\t%.1f(%s)\n",dcts_meas[i].name,(double)dcts_meas[i].value,dcts_meas[i].unit);
-                if(i == MEAS_NUM - 1){
-                    strncat(string,"\n",1);
-                }
-                uart_send((uint8_t*)string,(uint16_t)strlen(string));
-            }
-            sprintf(string, "test\n");
-            uart_send((uint8_t*)string,(uint16_t)strlen(string));*/
-
-        }else{
-            tick++;
-            uart_1.conn_last += uart_task_period;
-        }
-
-        osDelayUntil(&last_wake_time, uart_task_period);
-    }
 }
 
 #define control_task_period 5
@@ -3042,32 +2393,24 @@ void control_task(void const * argument){
         }
 
         // water min
-        //if(dcts_act[WTR_MIN_LVL].state.control){
-            if(dcts_meas[WTR_MIN_RES].valid){
-                dcts_act[WTR_MIN_LVL].meas_value = dcts_meas[WTR_MIN_RES].value;
-                if(dcts_act[WTR_MIN_LVL].meas_value < dcts_act[WTR_MIN_LVL].hysteresis){
-                    dcts_act[WTR_MIN_LVL].state.pin_state = 1;
-                }else{
-                    dcts_act[WTR_MIN_LVL].state.pin_state = 0;
-                }
+        if(dcts_meas[WTR_MIN_RES].valid){
+            dcts_act[WTR_MIN_LVL].meas_value = dcts_meas[WTR_MIN_RES].value;
+            if(dcts_act[WTR_MIN_LVL].meas_value < dcts_act[WTR_MIN_LVL].hysteresis){
+                dcts_act[WTR_MIN_LVL].state.pin_state = 1;
+            }else{
+                dcts_act[WTR_MIN_LVL].state.pin_state = 0;
             }
-        /*}else{
-            dcts_act[WTR_MIN_LVL].state.pin_state = 0;
-        }*/
+        }
 
         // water max
-        //if(dcts_act[WTR_MAX_LVL].state.control){
-            if(dcts_meas[WTR_MAX_RES].valid){
-                dcts_act[WTR_MAX_LVL].meas_value = dcts_meas[WTR_MAX_RES].value;
-                if(dcts_act[WTR_MAX_LVL].meas_value < dcts_act[WTR_MAX_LVL].hysteresis){
-                    dcts_act[WTR_MAX_LVL].state.pin_state = 1;
-                }else{
-                    dcts_act[WTR_MAX_LVL].state.pin_state = 0;
-                }
+        if(dcts_meas[WTR_MAX_RES].valid){
+            dcts_act[WTR_MAX_LVL].meas_value = dcts_meas[WTR_MAX_RES].value;
+            if(dcts_act[WTR_MAX_LVL].meas_value < dcts_act[WTR_MAX_LVL].hysteresis){
+                dcts_act[WTR_MAX_LVL].state.pin_state = 1;
+            }else{
+                dcts_act[WTR_MAX_LVL].state.pin_state = 0;
             }
-        /*}else{
-            dcts_act[WTR_MAX_LVL].state.pin_state = 0;
-        }*/
+        }
 
         // water pump
         if(dcts_act[AUTO_PUMP].state.control){
@@ -3554,17 +2897,6 @@ static uint16_t read_bkp(u8 bkp_num){
         sprintf(buf, "%d", data);
     }
     return atoff(buf);
-}*/
-
-/*static void led_lin_init(void){
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    GPIO_InitTypeDef GPIO_InitStruct;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Pin = LED_PIN;
-    HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
-    HAL_GPIO_Init (LED_PORT, &GPIO_InitStruct);
 }*/
 
 

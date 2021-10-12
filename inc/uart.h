@@ -83,6 +83,8 @@ extern UART_HandleTypeDef huart1;
 
 /*========== FUNCTION PROTOTYPES ==========*/
 
+
+void uart_task(void const * argument);
 int uart_init(uart_bitrate_t bit_rate,uint8_t word_len,uint8_t stop_bit_number,parity_t parity,uint16_t rx_delay,uint16_t lost_conn_timeout);
 void uart_deinit(void);
 void uart_gpio_init(void);

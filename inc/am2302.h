@@ -38,6 +38,7 @@ extern const am2302_pin_t am2302_pin[];
 
 //========== FUNCTIONS PROTOTYPES ==========
 
+void am2302_task (void const * argument);
 int am2302_init (void);
 void am2303_deinit(void);
 am2302_data_t am2302_get (uint8_t channel);

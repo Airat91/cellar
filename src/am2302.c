@@ -2,6 +2,7 @@
 #include "pin_map.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include "dcts.h"
 
 /**
   * @defgroup am2302
@@ -26,6 +27,109 @@ const am2302_pin_t am2302_pin[AM2302_CH_NUM] = {
 
 /*========== FUNCTIONS ==========*/
 
+/**
+ * @brief am2302_task
+ * @param argument
+ */
+
+#define am2302_task_period 3000
+void am2302_task (void const * argument){
+    (void)argument;
+    uint32_t last_wake_time = osKernelSysTick();
+    am2302_init();
+    am2302_data_t ch_2 = {0};
+    uint8_t ch_2_lost_con_cnt = 0;
+    uint32_t ch_2_recieved = 0;
+    uint32_t ch_2_lost = 0;
+    am2302_data_t ch_3 = {0};
+    uint8_t ch_3_lost_con_cnt = 0;
+    uint32_t ch_3_recieved = 0;
+    uint32_t ch_3_lost = 0;
+    am2302_data_t ch_4 = {0};
+    uint8_t ch_4_lost_con_cnt = 0;
+    uint32_t ch_4_recieved = 0;
+    uint32_t ch_4_lost = 0;
+    while(1){
+        ch_2 = am2302_get(0);
+        taskENTER_CRITICAL();
+        if(ch_2.error == 1){
+            ch_2_lost++;
+            ch_2_lost_con_cnt++;
+            if(ch_2_lost_con_cnt > 2){
+                dcts_meas[HUM_OUT].valid = FALSE;
+                dcts_meas[TMPR_OUT].valid = FALSE;
+            }
+        }else{
+            ch_2_recieved++;
+            ch_2_lost_con_cnt = 0;
+            dcts_meas[HUM_OUT].value = (float)ch_2.hum/10;
+            dcts_meas[HUM_OUT].valid = TRUE;
+            dcts_meas[TMPR_OUT].value = (float)ch_2.tmpr/10;
+            dcts_meas[TMPR_OUT].valid = TRUE;
+        }
+        taskEXIT_CRITICAL();
+
+        ch_3 = am2302_get(1);
+        taskENTER_CRITICAL();
+        if(ch_3.error == 1){
+            ch_3_lost++;
+            ch_3_lost_con_cnt++;
+            if(ch_3_lost_con_cnt > 2){
+                dcts_meas[HUM_IN_1].valid = FALSE;
+                dcts_meas[TMPR_IN_1].valid = FALSE;
+            }
+        }else{
+            ch_3_recieved++;
+            ch_3_lost_con_cnt = 0;
+            dcts_meas[HUM_IN_1].value = (float)ch_3.hum/10;
+            dcts_meas[HUM_IN_1].valid = TRUE;
+            dcts_meas[TMPR_IN_1].value = (float)ch_3.tmpr/10;
+            dcts_meas[TMPR_IN_1].valid = TRUE;
+        }
+        taskEXIT_CRITICAL();
+
+        ch_4 = am2302_get(2);
+        taskENTER_CRITICAL();
+        if(ch_4.error == 1){
+            ch_4_lost++;
+            ch_4_lost_con_cnt++;
+            if(ch_4_lost_con_cnt > 2){
+                dcts_meas[HUM_IN_2].valid = FALSE;
+                dcts_meas[TMPR_IN_2].valid = FALSE;
+            }
+        }else{
+            ch_4_recieved++;
+            ch_4_lost_con_cnt = 0;
+            dcts_meas[HUM_IN_2].value = (float)ch_4.hum/10;
+            dcts_meas[HUM_IN_2].valid = TRUE;
+            dcts_meas[TMPR_IN_2].value = (float)ch_4.tmpr/10;
+            dcts_meas[TMPR_IN_2].valid = TRUE;
+        }
+        taskEXIT_CRITICAL();
+
+        if((dcts_meas[HUM_IN_1].valid)&&(dcts_meas[HUM_IN_2].valid)){
+            dcts_meas[HUM_IN_AVG].value = (dcts_meas[HUM_IN_1].value + dcts_meas[HUM_IN_2].value)/2.0f;
+            dcts_meas[TMPR_IN_AVG].value = (dcts_meas[TMPR_IN_1].value + dcts_meas[TMPR_IN_2].value)/2.0f;
+            dcts_meas[HUM_IN_AVG].valid = TRUE;
+            dcts_meas[TMPR_IN_AVG].valid = TRUE;
+        }else if(dcts_meas[HUM_IN_1].valid){
+            dcts_meas[HUM_IN_AVG].value = dcts_meas[HUM_IN_1].value;
+            dcts_meas[TMPR_IN_AVG].value = dcts_meas[TMPR_IN_1].value;
+            dcts_meas[HUM_IN_AVG].valid = TRUE;
+            dcts_meas[TMPR_IN_AVG].valid = TRUE;
+        }else if(dcts_meas[HUM_IN_2].valid){
+            dcts_meas[HUM_IN_AVG].value = dcts_meas[HUM_IN_2].value;
+            dcts_meas[TMPR_IN_AVG].value = dcts_meas[TMPR_IN_2].value;
+            dcts_meas[HUM_IN_AVG].valid = TRUE;
+            dcts_meas[TMPR_IN_AVG].valid = TRUE;
+        }else{
+            dcts_meas[HUM_IN_AVG].valid = FALSE;
+            dcts_meas[TMPR_IN_AVG].valid = FALSE;
+        }
+
+        osDelayUntil(&last_wake_time, am2302_task_period);
+    }
+}
 /**
  * @brief Init AM2302 pins
  * @return  0 - AM2302 pins init successfull,\n
