@@ -133,7 +133,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 uint32_t us_cnt_H = 0;
 navigation_t navigation_style = MENU_NAVIGATION;
 edit_val_t edit_val = {0};
-saved_to_flash_t config;
 //bkp_data_t * bkp_data_p;
 static const uart_bitrate_t bitrate_array[14] = {
     BITRATE_600,
@@ -2078,7 +2077,7 @@ static void set_edit_value(menu_page_t page){
         edit_val.digit_min = 0;
         edit_val.digit = 0;
         edit_val.val_min.uint16 = 0;
-        edit_val.val_max.uint16 = 11;
+        edit_val.val_max.uint16 = 13;
         edit_val.p_val.p_uint16 = &bitrate_array_pointer;
         edit_val.select_shift = 0;
         edit_val.select_width = Font_7x10.FontWidth*6;
@@ -2458,7 +2457,6 @@ void control_task(void const * argument){
                     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
                     GPIO_InitStruct.Pin = do_ch[i].pin;
                     HAL_GPIO_Init (do_ch[i].port, &GPIO_InitStruct);
-                    //HAL_GPIO_WritePin(do_ch[i].port, do_ch[i].pin, GPIO_PIN_SET);
                     dcts_rele[i].state.status = 0;
                 }
             }
@@ -2716,6 +2714,7 @@ static void print_change(void){
 }
 
 static void save_params(void){
+    saved_to_flash_t config;
     static menuItem* current_menu;
     current_menu = selectedMenuItem;
     menuChange(&save_changes);
@@ -2754,13 +2753,15 @@ static void save_params(void){
     }
     // reinit uart
     uart_deinit();
-    uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
+    uart_1.bitrate = (uint16_t)bitrate_array[bitrate_array_pointer];
+    uart_init(uart_1.bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
     //delay for show message
     osDelay(2000);
     menuChange(current_menu);
 }
 
 static void restore_params(void){
+    saved_to_flash_t config;
     int area_cnt = find_free_area();
     if(area_cnt != 0){
         if(area_cnt == -1){
@@ -2777,8 +2778,12 @@ static void restore_params(void){
             addr++;
         }
 
-        // restore dcts_address
+        // restore ModBus params
         dcts.dcts_address = (uint8_t)config.params.mdb_address;
+        uart_1.bitrate = config.params.mdb_bitrate;
+        // restore display params
+        LCD.backlight_lvl = config.params.lcd_backlight_lvl;
+        LCD.auto_off = config.params.lcd_backlight_time;
         // restore dcts_act
         for(uint8_t i = 0; i < ACT_NUM; i++){
             dcts_act[i].set_value = config.params.act_set[i];
@@ -2792,10 +2797,21 @@ static void restore_params(void){
         }
     }else{
         //init default values if saved params not found
-        config.params.mdb_bitrate = BITRATE_115200;
+        dcts.dcts_address = 0x0B;
+        uart_1.bitrate = BITRATE_115200;
+        LCD.backlight_lvl = 1;
+        LCD.auto_off = 3;
+        for(uint8_t i = 0; i < ACT_NUM; i++){
+            dcts_act[i].set_value = 0.0f;
+            dcts_act[i].hysteresis = 0.0f;
+            dcts_act[i].state.control = 0;
+        }
+        for(uint8_t i = 0; i < RELE_NUM; i++){
+            dcts_rele[i].state.control_by_act = 0;
+        }
     }
     for(bitrate_array_pointer = 0; bitrate_array_pointer < 14; bitrate_array_pointer++){
-        if(bitrate_array[bitrate_array_pointer] == config.params.mdb_bitrate){
+        if(bitrate_array[bitrate_array_pointer] == uart_1.bitrate){
             break;
         }
     }
@@ -2803,9 +2819,6 @@ static void restore_params(void){
 
 static void save_to_bkp(u8 bkp_num, uint16_t var){
     uint32_t data = var;
-    /*if(bkp_num%2 == 1){
-        data = data << 8;
-    }*/
     HAL_PWR_EnableBkUpAccess();
     switch (bkp_num){
     case 0:

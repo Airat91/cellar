@@ -312,7 +312,7 @@ extern osThreadId am2302TaskHandle;
 extern osThreadId ds18TaskHandle;
 extern osThreadId navigationtTaskHandle;
 extern osThreadId uartTaskHandle;
-extern saved_to_flash_t config;
+//extern saved_to_flash_t config;
 extern const ch_t do_ch[];
 extern const ch_t ch[];
 extern const in_channel_t input_ch[];

@@ -31,7 +31,7 @@ uart_stream_t uart_1 = {0};
 #define uart_task_period 5
 void uart_task(void const * argument){
     (void)argument;
-    uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
+    uart_init(uart_1.bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
     uint16_t tick = 0;
     char string[100];
     uint32_t last_wake_time = osKernelSysTick();
@@ -60,7 +60,7 @@ void uart_task(void const * argument){
         }
         if((uart_1.conn_last > uart_1.conn_lost_timeout)||(uart_1.overrun_err_cnt > 2)){
             uart_deinit();
-            uart_init(config.params.mdb_bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
+            uart_init(uart_1.bitrate, 8, 1, PARITY_NONE, 10000, UART_CONN_LOST_TIMEOUT);
         }
         if(tick == 1000/uart_task_period){
             tick = 0;

@@ -39,8 +39,8 @@ TIM_HandleTypeDef htim4;
  */
 int LCD_init (void){
     int result = 0;
-    LCD.auto_off = config.params.lcd_backlight_time;
-    LCD.backlight_lvl = config.params.lcd_backlight_lvl;
+    //LCD.auto_off = config.params.lcd_backlight_time;
+    //LCD.backlight_lvl = config.params.lcd_backlight_lvl;
     LCD_gpio_init();
     LCD_backlight_timer_init();
 

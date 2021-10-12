@@ -71,6 +71,7 @@ typedef struct {
     uint8_t* buff_out;
     uint8_t* buff_in;
     uint8_t* buff_received;
+    uint16_t bitrate;
 } uart_stream_t;
 
 /*========= GLOBAL VARIABLES ==========*/
