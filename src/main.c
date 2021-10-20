@@ -159,14 +159,14 @@ static const char manual_auto_descr[2][10] = {
     "Ручной",
     "Авто",
 };
-static const char ch_mode_descr[6][10] = {
+/*static const char ch_mode_descr[6][10] = {
     "Неактивен",
     "Аналоговый",
     "Дис. вход",
     "Дис. выход",
     "AM2302",
     "ШИМ-выход",
-};
+};*/
 
 const in_channel_t input_ch[8] = {
     {.mode = CH_MODE_ADC,   .port = CH_0_PORT, .pin = CH_0_PIN, .adc_num = ADC1, .adc_channel = ADC_CHANNEL_0, .pwm_tim = TIM2, .pwm_channel = TIM_CHANNEL_1},
@@ -195,7 +195,6 @@ const ch_t do_ch[6] = {
   * @retval None
   */
 int main(void){
-
     HAL_Init();
     SystemClock_Config();
     tim2_init();
@@ -2285,6 +2284,11 @@ void control_task(void const * argument){
     static pump_st_t pump_state = PUMP_EMPTY;
     static t_heat_t t_heat = T_HEAT_HEATING;
     static t_cool_t t_cool = T_COOL_COOLING;
+    static uint16_t valve_tick = 0;
+    uint8_t last_valve_in_state = dcts_act[VALVE_IN].state.control;
+    uint8_t last_valve_out_state = dcts_act[VALVE_OUT].state.control;
+    #define VALVE_PWM_RUN_TIME  2*1000
+    #define VALVE_CTRL_PERIOD   60*1000
     channels_init();
     channel_PWM_timer_init(5);
     channel_PWM_timer_init(6);
@@ -2292,22 +2296,31 @@ void control_task(void const * argument){
     while(1){
 
         // input valve
-        if(dcts_act[VALVE_IN].state.control){
+        if((dcts_act[VALVE_IN].state.control)&&(valve_tick < VALVE_PWM_RUN_TIME)){
             channel_PWM_duty_set(5, (dcts_act[VALVE_IN].set_value*0.05f+5.0f));
             HAL_TIM_PWM_Start(&htim3, input_ch[5].pwm_channel);
-            //HAL_GPIO_WritePin(input_ch[5].port, input_ch[5].pin, GPIO_PIN_SET);
         }else {
             HAL_TIM_PWM_Stop(&htim3, input_ch[5].pwm_channel);
             HAL_GPIO_WritePin(input_ch[5].port, input_ch[5].pin, GPIO_PIN_RESET);
         }
 
         // output valve
-        if(dcts_act[VALVE_OUT].state.control){
+        if((dcts_act[VALVE_OUT].state.control)&&(valve_tick < VALVE_PWM_RUN_TIME)){
             channel_PWM_duty_set(6, (dcts_act[VALVE_OUT].set_value*0.05f+5.0f));
             HAL_TIM_PWM_Start(&htim3, input_ch[6].pwm_channel);
         }else {
             HAL_TIM_PWM_Stop(&htim3, input_ch[6].pwm_channel);
             HAL_GPIO_WritePin(input_ch[6].port, input_ch[6].pin, GPIO_PIN_RESET);
+        }
+        valve_tick += control_task_period;
+        if(valve_tick >= VALVE_CTRL_PERIOD){
+            valve_tick = 0;
+        }
+        if((last_valve_in_state != dcts_act[VALVE_IN].state.control)||
+                (last_valve_out_state = dcts_act[VALVE_OUT].state.control)){
+            valve_tick = 0;
+            last_valve_in_state = dcts_act[VALVE_IN].state.control;
+            last_valve_out_state = dcts_act[VALVE_OUT].state.control;
         }
 
         // temperature in (heating)
