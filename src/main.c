@@ -242,13 +242,13 @@ int main(void){
 void dcts_init (void) {
 
     dcts.dcts_id = DCTS_ID_COMBINED;
-    strcpy (dcts.dcts_ver, "0.2.2");
+    strcpy (dcts.dcts_ver, "0.2.3");
     strcpy (dcts.dcts_name, "Pogreb");
     strcpy (dcts.dcts_name_cyr, "Погреб");
     dcts.dcts_address = 0x0B;
     dcts.dcts_rtc.day = 1;
     dcts.dcts_rtc.month = 1;
-    dcts.dcts_rtc.year = 2000;
+    dcts.dcts_rtc.year = 2021;
     dcts.dcts_rtc.weekday = 6;
     dcts.dcts_rtc.hour = 12;
     dcts.dcts_rtc.minute = 0;
@@ -2317,9 +2317,8 @@ void control_task(void const * argument){
         if(valve_tick >= VALVE_CTRL_PERIOD){
             valve_tick = 0;
         }
-        double temp = fabs(last_valve_in_state - (double)dcts_act[VALVE_IN].set_value);
-        temp = fabs(last_valve_out_state - (double)dcts_act[VALVE_OUT].set_value);
 
+        // set new valves value
         if((fabs(last_valve_in_state - (double)dcts_act[VALVE_IN].set_value) > (double)0.1f)||
                 (fabs(last_valve_out_state - (double)dcts_act[VALVE_OUT].set_value) > (double)0.1f)){
             valve_tick = 0;
@@ -2365,18 +2364,22 @@ void control_task(void const * argument){
 
         // temperature in (cooling)
         if(dcts_act[TMPR_IN_COOLING].state.control){
-            if(dcts_meas[TMPR_IN_AVG].valid){
+            if((dcts_meas[TMPR_IN_AVG].valid)&&(dcts_meas[TMPR_OUT].valid)&&
+                    (dcts_meas[TMPR_OUT].value < dcts_meas[TMPR_IN_AVG].value)){
                 dcts_act[TMPR_IN_COOLING].meas_value = dcts_meas[TMPR_IN_AVG].value;
-
                 switch(t_cool){
                 case T_COOL_COOLING:
                     dcts_act[TMPR_IN_COOLING].state.pin_state = 1;
+                    dcts_act[VALVE_IN].set_value = 100.0f;
+                    dcts_act[VALVE_OUT].set_value = 100.0f;
                     if(dcts_act[TMPR_IN_COOLING].meas_value <= (dcts_act[TMPR_IN_COOLING].set_value - 0.5f*dcts_act[TMPR_IN_COOLING].hysteresis)){
                         t_cool = T_COOL_HEATING;
                     }
                     break;
                 case T_COOL_HEATING:
                     dcts_act[TMPR_IN_COOLING].state.pin_state = 0;
+                    dcts_act[VALVE_IN].set_value = 0.0f;
+                    dcts_act[VALVE_OUT].set_value = 0.0f;
                     if(dcts_act[TMPR_IN_COOLING].meas_value >= (dcts_act[TMPR_IN_COOLING].set_value + 0.5f*dcts_act[TMPR_IN_COOLING].hysteresis)){
                         t_cool = T_COOL_COOLING;
                     }
@@ -2385,16 +2388,18 @@ void control_task(void const * argument){
             }else{
                 // current value unknown
                 dcts_act[TMPR_IN_COOLING].state.pin_state = 0;
+                dcts_act[VALVE_IN].set_value = 0.0f;
+                dcts_act[VALVE_OUT].set_value = 0.0f;
             }
             // set rele_control if control_by_act enable
-            if(dcts_rele[FREEZER].state.control_by_act == 1){
-                if(dcts_rele[FREEZER].state.control != dcts_act[TMPR_IN_COOLING].state.pin_state)
-                dcts_rele[FREEZER].state.control = dcts_act[TMPR_IN_COOLING].state.pin_state;
+            if(dcts_rele[FAN_IN].state.control_by_act == 1){
+                if(dcts_rele[FAN_IN].state.control != dcts_act[TMPR_IN_COOLING].state.pin_state)
+                dcts_rele[FAN_IN].state.control = dcts_act[TMPR_IN_COOLING].state.pin_state;
             }
         }else{
             // disable rele_control if control_by_act enable
-            if(dcts_rele[FREEZER].state.control_by_act == 1){
-                dcts_rele[FREEZER].state.control = 0;
+            if(dcts_rele[FAN_IN].state.control_by_act == 1){
+                dcts_rele[FAN_IN].state.control = 0;
             }
         }
 

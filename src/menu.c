@@ -92,7 +92,7 @@ MAKE_MENU       (main_page,     NULL_ENTRY,     NULL_ENTRY,     NULL_ENTRY,     
     MAKE_MENU   (rele_ch_1,     rele_ch_2,      rele_ch_0,      rele_channels,  rele_auto_1,    2,          RELE_CH_1,          "Нагреватель");
       MAKE_MENU (rele_auto_1,   rele_cntrl_1,   rele_cntrl_1,   rele_ch_1,      EDITED_VAL,     0,          RELE_AUTO_MAN_1,    "Управление");
       MAKE_MENU (rele_cntrl_1,  rele_auto_1,    rele_auto_1,    rele_ch_1,      EDITED_VAL,     0,          RELE_CONTROL_1,     "Состояние");
-    MAKE_MENU   (rele_ch_2,     rele_ch_3,      rele_ch_1,      rele_channels,  rele_auto_2,    2,          RELE_CH_2,          "Охладитель");
+    MAKE_MENU   (rele_ch_2,     rele_ch_3,      rele_ch_1,      rele_channels,  rele_auto_2,    2,          RELE_CH_2,          "Осушитель");
       MAKE_MENU (rele_auto_2,   rele_cntrl_2,   rele_cntrl_2,   rele_ch_2,      EDITED_VAL,     0,          RELE_AUTO_MAN_2,    "Управление");
       MAKE_MENU (rele_cntrl_2,  rele_auto_2,    rele_auto_2,    rele_ch_2,      EDITED_VAL,     0,          RELE_CONTROL_2,     "Состояние");
     MAKE_MENU   (rele_ch_3,     rele_ch_4,      rele_ch_2,      rele_channels,  rele_auto_3,    2,          RELE_CH_3,          "Конвекция");
