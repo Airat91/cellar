@@ -66,6 +66,7 @@
 #include "modbus.h"
 #include "ds18.h"
 #include "time.h"
+#include "math.h"
 
 /**
   * @defgroup MAIN
@@ -2285,9 +2286,9 @@ void control_task(void const * argument){
     static t_heat_t t_heat = T_HEAT_HEATING;
     static t_cool_t t_cool = T_COOL_COOLING;
     static uint16_t valve_tick = 0;
-    uint8_t last_valve_in_state = dcts_act[VALVE_IN].state.control;
-    uint8_t last_valve_out_state = dcts_act[VALVE_OUT].state.control;
-    #define VALVE_PWM_RUN_TIME  2*1000
+    double last_valve_in_state = (double)dcts_act[VALVE_IN].set_value;
+    double last_valve_out_state = (double)dcts_act[VALVE_OUT].set_value;
+    #define VALVE_PWM_RUN_TIME  1*1000
     #define VALVE_CTRL_PERIOD   60*1000
     channels_init();
     channel_PWM_timer_init(5);
@@ -2316,11 +2317,14 @@ void control_task(void const * argument){
         if(valve_tick >= VALVE_CTRL_PERIOD){
             valve_tick = 0;
         }
-        if((last_valve_in_state != dcts_act[VALVE_IN].state.control)||
-                (last_valve_out_state = dcts_act[VALVE_OUT].state.control)){
+        double temp = fabs(last_valve_in_state - (double)dcts_act[VALVE_IN].set_value);
+        temp = fabs(last_valve_out_state - (double)dcts_act[VALVE_OUT].set_value);
+
+        if((fabs(last_valve_in_state - (double)dcts_act[VALVE_IN].set_value) > (double)0.1f)||
+                (fabs(last_valve_out_state - (double)dcts_act[VALVE_OUT].set_value) > (double)0.1f)){
             valve_tick = 0;
-            last_valve_in_state = dcts_act[VALVE_IN].state.control;
-            last_valve_out_state = dcts_act[VALVE_OUT].state.control;
+            last_valve_in_state = (double)dcts_act[VALVE_IN].set_value;
+            last_valve_out_state = (double)dcts_act[VALVE_OUT].set_value;
         }
 
         // temperature in (heating)
