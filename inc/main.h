@@ -269,10 +269,15 @@ typedef enum{
     T_HEAT_COOLING,
 }t_heat_t;
 
- typedef enum{
-     T_COOL_COOLING = 0,
-     T_COOL_HEATING,
- }t_cool_t;
+typedef enum{
+    T_COOL_COOLING = 0,
+    T_COOL_HEATING,
+}t_cool_t;
+
+typedef enum{
+    HUM_DOWN = 0,
+    HUM_UP,
+}rh_down_t;
 
 typedef struct{
     ch_mode_t mode;

@@ -2285,6 +2285,8 @@ void control_task(void const * argument){
     static pump_st_t pump_state = PUMP_EMPTY;
     static t_heat_t t_heat = T_HEAT_HEATING;
     static t_cool_t t_cool = T_COOL_COOLING;
+    static t_cool_t hum_cool = T_COOL_COOLING;
+    static rh_down_t hum_down = HUM_DOWN;
     static uint16_t valve_tick = 0;
     double last_valve_in_state = (double)dcts_act[VALVE_IN].set_value;
     double last_valve_out_state = (double)dcts_act[VALVE_OUT].set_value;
@@ -2403,13 +2405,74 @@ void control_task(void const * argument){
             }
         }
 
-        // hummidity in
-        if(dcts_act[HUM_IN].state.control){
-            if(dcts_meas[HUM_IN_AVG].valid){
+        // hummidity in (valves, fan_in and heating)
+        /*dcts_meas[HUM_IN_AVG].valid = 1;
+        dcts_meas[TMPR_IN_AVG].valid = 1;
+        dcts_meas[HUM_OUT].valid = 1;
+        dcts_meas[TMPR_OUT].valid = 1;*/
+        if((dcts_act[HUM_IN].state.control)&&(dcts_act[TMPR_IN_HEATING].state.control)){
+            if((dcts_meas[HUM_IN_AVG].valid)&&(dcts_meas[HUM_OUT].valid)){
                 dcts_act[HUM_IN].meas_value = dcts_meas[HUM_IN_AVG].value;
+                switch(hum_down){
+                case HUM_DOWN:
+                    switch(hum_cool){
+                    case T_COOL_COOLING:
+                        dcts_act[HUM_IN].state.pin_state = 1;
+                        dcts_act[VALVE_IN].set_value = 100.0f;
+                        dcts_act[VALVE_OUT].set_value = 100.0f;
+
+                        //dcts_meas[TMPR_IN_AVG].value -= 0.0005f;
+
+                        if(dcts_act[TMPR_IN_HEATING].meas_value <= (dcts_act[TMPR_IN_HEATING].set_value - 0.5f*dcts_act[TMPR_IN_HEATING].hysteresis)){
+                            hum_cool = T_COOL_HEATING;
+                        }
+                        break;
+                    case T_COOL_HEATING:
+                        dcts_act[HUM_IN].state.pin_state = 0;
+                        dcts_act[VALVE_IN].set_value = 0.0f;
+                        dcts_act[VALVE_OUT].set_value = 0.0f;
+
+                        //dcts_meas[TMPR_IN_AVG].value += 0.0005f;
+
+                        if(dcts_act[TMPR_IN_HEATING].meas_value >= (dcts_act[TMPR_IN_HEATING].set_value + 0.5f*dcts_act[TMPR_IN_HEATING].hysteresis)){
+                            hum_cool = T_COOL_COOLING;
+                        }
+                        break;
+                    }
+
+                    //dcts_meas[HUM_IN_AVG].value -= 0.0005f;
+
+                    if(dcts_act[HUM_IN].meas_value <= (dcts_act[HUM_IN].set_value - 0.5f*dcts_act[HUM_IN].hysteresis)){
+                        hum_down = HUM_UP;
+                    }
+                    break;
+                case HUM_UP:
+                    dcts_act[HUM_IN].state.pin_state = 0;
+                    dcts_act[VALVE_IN].set_value = 0.0f;
+                    dcts_act[VALVE_OUT].set_value = 0.0f;
+
+                    //dcts_meas[HUM_IN_AVG].value += 0.0005f;
+
+                    if(dcts_act[HUM_IN].meas_value >= (dcts_act[HUM_IN].set_value + 0.5f*dcts_act[HUM_IN].hysteresis)){
+                        hum_down = HUM_DOWN;
+                    }
+                    break;
+                }
             }else{
                 // current value unknown
                 dcts_act[HUM_IN].state.pin_state = 0;
+                dcts_act[VALVE_IN].set_value = 0.0f;
+                dcts_act[VALVE_OUT].set_value = 0.0f;
+            }
+            // set rele_control if control_by_act enable
+            if(dcts_rele[FAN_IN].state.control_by_act == 1){
+                if(dcts_rele[FAN_IN].state.control != dcts_act[HUM_IN].state.pin_state)
+                dcts_rele[FAN_IN].state.control = dcts_act[HUM_IN].state.pin_state;
+            }
+        }else{
+            // disable rele_control if control_by_act enable
+            if(dcts_rele[FAN_IN].state.control_by_act == 1){
+                dcts_rele[FAN_IN].state.control = 0;
             }
         }
 
