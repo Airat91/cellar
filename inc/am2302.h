@@ -44,5 +44,6 @@ void am2303_deinit(void);
 am2302_data_t am2302_get (uint8_t channel);
 void am2302_send(am2302_data_t data, uint8_t channel);
 am2302_data_t am2302_get_rtc(uint8_t channel);
+void am2302_reinit(int channel);
 
 #endif /* am2302_H_ */

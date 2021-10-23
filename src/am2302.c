@@ -59,6 +59,9 @@ void am2302_task (void const * argument){
                 dcts_meas[HUM_OUT].valid = FALSE;
                 dcts_meas[TMPR_OUT].valid = FALSE;
             }
+            if(ch_2_lost_con_cnt > 9){
+                am2302_reinit(0);
+            }
         }else{
             ch_2_recieved++;
             ch_2_lost_con_cnt = 0;
@@ -78,6 +81,9 @@ void am2302_task (void const * argument){
                 dcts_meas[HUM_IN_1].valid = FALSE;
                 dcts_meas[TMPR_IN_1].valid = FALSE;
             }
+            if(ch_3_lost_con_cnt > 9){
+                am2302_reinit(1);
+            }
         }else{
             ch_3_recieved++;
             ch_3_lost_con_cnt = 0;
@@ -96,6 +102,9 @@ void am2302_task (void const * argument){
             if(ch_4_lost_con_cnt > 2){
                 dcts_meas[HUM_IN_2].valid = FALSE;
                 dcts_meas[TMPR_IN_2].valid = FALSE;
+            }
+            if(ch_4_lost_con_cnt > 9){
+                am2302_reinit(2);
             }
         }else{
             ch_4_recieved++;
@@ -144,7 +153,7 @@ int am2302_init (void) {
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOD_CLK_ENABLE();
 
-    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -164,6 +173,22 @@ void am2302_deinit (void){
     for(uint8_t i = 0; i < AM2302_CH_NUM; i++){
         HAL_GPIO_DeInit(am2302_pin[i].port, am2302_pin[i].pin);
     }
+}
+
+/**
+ * @brief Reinit AM2302 pin
+ * @param channel
+ * @ingroup am2302
+ */
+void am2302_reinit(int channel){
+    HAL_GPIO_DeInit(am2302_pin[channel].port, am2302_pin[channel].pin);
+
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Pin = am2302_pin[channel].pin;
+    HAL_GPIO_Init (am2302_pin[channel].port, &GPIO_InitStruct);
 }
 
 /**
