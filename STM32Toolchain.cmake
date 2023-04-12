@@ -9,7 +9,7 @@ set(CMAKE_SYSTEM_VERSION 1)
 set(COMMON_FLAGS "-mcpu=${MCU_ARCH} -mthumb -mthumb-interwork -ffunction-sections -fdata-sections -g -O0 -fno-common -fmessage-length=0 ")
 
 
-set(COMPILER_DIRECT C:/yagarto6/bin)
+set(COMPILER_DIRECT $ENV{STMCompilerDirectory})
 set(CMAKE_C_COMPILER ${COMPILER_DIRECT}/arm-none-eabi-gcc.exe)
 set(CMAKE_CXX_COMPILER ${COMPILER_DIRECT}/arm-none-eabi-g++.exe)
 set(CMAKE_ASM_COMPILER ${COMPILER_DIRECT}/arm-none-eabi-g++.exe)
